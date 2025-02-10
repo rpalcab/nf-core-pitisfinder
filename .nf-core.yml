@@ -1,0 +1,16 @@
+repository_type: pipeline
+
+nf_core_version: 3.2.0
+
+lint: {}
+
+template:
+  org: nf-core
+  name: pitisfinder
+  description: Workflow for the detection, characterization and clustering of bacterial
+    Mobile Genetic Elements (EGMs).
+  author: "Rosal\xEDa Palomino-Cabrera, Jorge Rodr\xEDguez-Grande"
+  version: 1.0.0dev
+  force: true
+  outdir: .
+  is_nfcore: true
