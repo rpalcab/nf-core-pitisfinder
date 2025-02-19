@@ -53,8 +53,8 @@ workflow NFCORE_PITISFINDER {
     PITISFINDER (
         samplesheet
     )
-    emit:
-    multiqc_report = PITISFINDER.out.multiqc_report // channel: /path/to/multiqc_report.html
+    // emit:
+    // multiqc_report = PITISFINDER.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,7 +93,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        NFCORE_PITISFINDER.out.multiqc_report
+        // NFCORE_PITISFINDER.out.multiqc_report
     )
 }
 

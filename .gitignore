@@ -7,3 +7,7 @@ testing/
 testing*
 *.pyc
 null/
+assets/schema_input (Copy).json
+out_test/
+samplesheet.csv
+test_samples/
