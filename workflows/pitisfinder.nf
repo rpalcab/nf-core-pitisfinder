@@ -3,12 +3,14 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+// include { FASTQC                 } from '../modules/nf-core/fastqc/main'
+// include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
+include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
+include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,8 +38,20 @@ workflow PITISFINDER {
     main:
 
     ch_versions = Channel.empty()
-    results_ch = ECHO(ch_samplesheet)
-    results_ch.view{ it }
+
+    // MOBSUITE RECON
+    MOBSUITE_RECON (
+        ch_samplesheet
+    )
+
+    ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
+    
+    INTEGRON_FINDER (
+        ch_samplesheet
+    )
+    // INTEGRON_FINDER.out.view{ it }
+    //ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
+
     // ch_multiqc_files = Channel.empty()
     //
     // MODULE: Run FastQC
