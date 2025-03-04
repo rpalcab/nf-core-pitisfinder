@@ -10,6 +10,7 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
+include { COPLA } from '../modules/local/copla/main'
 include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
 
 /*
@@ -61,12 +62,20 @@ workflow PITISFINDER {
 
     // MOBSUITE RECON
     ch_plasmids = MOBSUITE_RECON (ch_samplesheet).plasmids
-    ch_plasmids.view()
-
-    FILTER_PLASMIDS (ch_plasmids)
-
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
-    
+
+    // PROCESS PLASMIDS (RENAME)
+    // OJO! Ya no filtra por tamaño
+    ch_filtered = FILTER_PLASMIDS (ch_plasmids)
+
+    // COPLA
+    ch_filtered
+        .flatMap { meta, fileList ->
+            // fileList es opcional; si no hay archivos, no se emite nada
+            fileList ? fileList.collect { file -> tuple(meta, file) } : []
+        }
+    COPLA (ch_filtered)
+
     INTEGRON_FINDER (
         ch_samplesheet
     )
