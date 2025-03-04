@@ -9,5 +9,5 @@ testing*
 null/
 assets/schema_input (Copy).json
 out_test/
-samplesheet.csv
+samplesheet*.csv
 test_samples/

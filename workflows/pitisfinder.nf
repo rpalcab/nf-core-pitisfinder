@@ -31,6 +31,26 @@ process ECHO {
     """
 }
 
+process FILTER_PLASMIDS {
+    tag "$meta.id"
+    label 'process_medium'
+
+    input:
+    tuple val(meta), path(plasmid_files)
+
+    output:
+    tuple val(meta), path("*.fasta"), emit: filtered_plasmids, optional: true
+
+    script:
+    """
+    for i in ${plasmid_files}; do
+        new_name=\$(basename "\$i" | rev | cut -f1 -d'/' | cut -f2- -d'.' | cut -f1 -d'_' | rev)
+        echo "Renaming \$i as \${new_name}_${meta.id}.fasta"
+        mv "\$i" \${new_name}_${meta.id}.fasta
+    done
+    """
+}
+
 workflow PITISFINDER {
 
     take:
@@ -40,15 +60,18 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // MOBSUITE RECON
-    MOBSUITE_RECON (
-        ch_samplesheet
-    )
+    ch_plasmids = MOBSUITE_RECON (ch_samplesheet).plasmids
+    ch_plasmids.view()
+
+    FILTER_PLASMIDS (ch_plasmids)
 
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
     
     INTEGRON_FINDER (
         ch_samplesheet
     )
+    ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
+
     // INTEGRON_FINDER.out.view{ it }
     //ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
 
