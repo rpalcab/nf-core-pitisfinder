@@ -11,3 +11,4 @@ assets/schema_input (Copy).json
 out_test/
 samplesheet*.csv
 test_samples/
+expected_copla.txt

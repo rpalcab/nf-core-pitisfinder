@@ -4,16 +4,17 @@ process COPLA {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://rpalcab/copla:latest' :
-        'docker.io/rpalcab/copla:latest' }"
+        'docker://rpalcab/copla:dev' :
+        'docker.io/rpalcab/copla:dev' }"
 
     input:
-    tuple val(meta), path(plasmid_file)
+    tuple val(meta), val(plasmid_name), path(file)
 
     output:
-    path "copla/${meta.id}/", emit: results
-    path "copla.txt", emit: log
-
+    path "copla/$plasmid_name/", emit: results
+    path "copla/$plasmid_name/copla.txt", emit: log
+    path "versions.yml", emit: versions
+    
     when:
     task.ext.when == null || task.ext.when
 
@@ -24,11 +25,13 @@ process COPLA {
     #     bin/download_Copla_databases.sh
     # fi
 
-    python3 bin/copla.py \\
-         "$plasmid_file" \\
-         databases/Copla_RS84/RS84f_sHSBM.pickle \\
-         databases/Copla_RS84/CoplaDB.fofn \\
-         copla/${meta.id}
+    mkdir -p copla/${plasmid_name}
+
+    copla \\
+         "$file" \\
+         /data/app/databases/Copla_RS84/RS84f_sHSBM.pickle \\
+         /data/app/databases/Copla_RS84/CoplaDB.fofn \\
+         copla/${plasmid_name} > copla/${plasmid_name}/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -38,7 +41,8 @@ process COPLA {
 
     stub:
     """
-    mkdir -p ${prefix}
+    mkdir -p copla/
+    touch copla/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

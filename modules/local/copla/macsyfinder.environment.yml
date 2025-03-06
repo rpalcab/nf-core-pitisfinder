@@ -1,8 +1,0 @@
-name: macsyfinder
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - python=2.7
-  - macsyfinder=1.0.5

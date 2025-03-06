@@ -32,7 +32,7 @@ process ECHO {
     """
 }
 
-process FILTER_PLASMIDS {
+process RENAME_PLASMIDS {
     tag "$meta.id"
     label 'process_medium'
 
@@ -64,17 +64,20 @@ workflow PITISFINDER {
     ch_plasmids = MOBSUITE_RECON (ch_samplesheet).plasmids
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
 
-    // PROCESS PLASMIDS (RENAME)
+    // RENAME PLASMIDS
     // OJO! Ya no filtra por tamaño
-    ch_filtered = FILTER_PLASMIDS (ch_plasmids)
+    ch_filtered = RENAME_PLASMIDS (ch_plasmids)
 
     // COPLA
-    ch_filtered
-        .flatMap { meta, fileList ->
-            // fileList es opcional; si no hay archivos, no se emite nada
-            fileList ? fileList.collect { file -> tuple(meta, file) } : []
-        }
-    COPLA (ch_filtered)
+    ch_filtered.flatMap { meta, fileList ->
+    // Si fileList no es una lista, lo tokenizamos (dividimos por espacios)
+    def files = fileList instanceof List ? fileList : fileList.toString().tokenize(' ')
+    files.collect { file -> 
+        def plasmid_name = file.getName().toString().replaceFirst(/\.fasta$/, '')
+        tuple(meta, plasmid_name, file) }
+    } | COPLA
+
+    ch_versions = ch_versions.mix( COPLA.out.versions )
 
     INTEGRON_FINDER (
         ch_samplesheet

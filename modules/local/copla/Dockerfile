@@ -11,29 +11,29 @@ libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 \
 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 \ 
 libnss3
 
-# Definir el directorio de trabajo
-WORKDIR /opt/copla
+# Establecer el directorio de trabajo inicial en la raíz
+WORKDIR /data/app/
 
-# Descargar COPLA
-RUN git clone https://github.com/santirdnd/COPLA .
-# Enlace simbólico para que copla no de fallo
-RUN ln -s /opt/conda/etc /opt/copla/etc
+# Clonar COPLA en un directorio dedicado (/copla)
+# RUN git clone -b dev --single-branch https://github.com/rpalcab/COPLA.git /copla
+COPY copla .
+
+# Añadir copla al $PATH del sistema
+RUN echo 'export PATH="$PATH:/data/app/bin"' >> ~/.bashrc
 
 # Instalar COPLA en su entorno de conda
-COPY environment.yml .
-RUN conda env create -f environment.yml -n copla
+RUN conda env create -f /data/app/copla.environment.yml -n copla
 
-# Instalar MacSyFinder en un entorno separado
-RUN conda env create -f macsyfinder.environment.yml -n macsyfinder
+# Instalar MacSyFinder en su entorno separado
+RUN conda env create -f /data/app/macsyfinder.environment.yml -n macsyfinder
 
-# Ejecutar conda init para configurar shells dentro del contenedor
-RUN /bin/bash -c "conda init bash && \
-    echo 'source /opt/conda/etc/profile.d/conda.sh' >> ~/.bashrc"
+# Ejecutar conda init para bash y configurar el sourcing de conda.sh
+RUN /bin/bash -c "conda init bash && echo 'source /opt/conda/etc/profile.d/conda.sh && conda activate copla' >> ~/.bashrc"
 
-# Activar MacSyFinder y hacer instalación manual
+# Activar macsyfinder y realizar la instalación manual de MacSyFinder
 RUN /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
     conda activate macsyfinder && \
-    cd \${CONDA_PREFIX} && \
+    cd ${CONDA_PREFIX} && \
     wget https://github.com/gem-pasteur/macsyfinder/archive/macsyfinder-1.0.5.tar.gz && \
     tar zxf macsyfinder-1.0.5.tar.gz && \
     wget https://github.com/gem-pasteur/macsyview/archive/macsyview-1.0.1.tar.gz && \
@@ -46,22 +46,21 @@ RUN /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
     python setup.py install --prefix=\${CONDA_PREFIX} && \
     conda deactivate"
 
-# Descargar el script ANI y moverlo a la carpeta bin
-RUN wget https://github.com/lmrodriguezr/enveomics/raw/master/Scripts/ani.rb && \
-    chmod +x ani.rb && \
-    mv ani.rb /opt/copla/bin/
+# Descargar el script ani.rb y moverlo a la carpeta bin de COPLA
+RUN wget https://github.com/lmrodriguezr/enveomics/raw/master/Scripts/ani.rb -P /data/app/bin/ && \
+    chmod +x /data/app/bin/ani.rb
 
-# Configurar conda para activarse automáticamente con el entorno COPLA
-RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate copla" >> ~/.bashrc
+# Crear un enlace simbólico para que el ejecutable se encuentre en PATH
+RUN ln -s /data/app/bin/copla.py /usr/local/bin/copla
 
 # Descargar bases de datos de COPLA
-RUN bin/download_Copla_databases.sh
+RUN /data/app/bin/download_Copla_databases.sh
 
 # Copiar el script de activación de MacSyFinder dentro del contenedor
 RUN echo 'source /opt/conda/etc/profile.d/conda.sh && conda activate macsyfinder && exec "$@"' > /usr/local/bin/run_macsyfinder.sh
 RUN chmod +x /usr/local/bin/run_macsyfinder.sh
 
-# Configurar la variable de entorno para asegurar que conda puede activar entornos
+# Ajustar la variable PATH para que se incluya el entorno COPLA
 ENV PATH="/opt/conda/envs/copla/bin:$PATH"
 
 # Establecer el entorno activado por defecto
