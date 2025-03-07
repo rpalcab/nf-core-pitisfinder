@@ -4,8 +4,13 @@ process COPLA {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+<<<<<<< Updated upstream
         'docker://rpalcab/copla:1.0' :
         'docker.io/rpalcab/copla:1.0' }"
+=======
+        'docker://rpalcab/copla:1.0light' :
+        'docker.io/rpalcab/copla:1.0light' }"
+>>>>>>> Stashed changes
 
     input:
     tuple val(meta), val(plasmid_name), path(file)
@@ -14,28 +19,26 @@ process COPLA {
     path "copla/$plasmid_name/", emit: results
     path "copla/$plasmid_name/copla.txt", emit: log
     path "versions.yml", emit: versions
-    
+
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    # Descargar bases de datos si no existen
-    # if [ ! -d "databases" ]; then
-    #     bin/download_Copla_databases.sh
-    # fi
+    download_Copla_databases
+    # post_install_test
 
     mkdir -p copla/${plasmid_name}
 
     copla \\
          "$file" \\
-         /data/app/databases/Copla_RS84/RS84f_sHSBM.pickle \\
-         /data/app/databases/Copla_RS84/CoplaDB.fofn \\
+         databases/Copla_RS84/RS84f_sHSBM.pickle \\
+         databases/Copla_RS84/CoplaDB.fofn \\
          copla/${plasmid_name} > copla/${plasmid_name}/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        copla: \$(echo \$(python3 bin/copla.py --version 2>&1) | cut -f2 -d' ')
+        copla: \$( copla --version | cut -f2 -d' ')
     END_VERSIONS
     """
 
@@ -46,7 +49,7 @@ process COPLA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        copla: \$(echo \$(python3 bin/copla.py --version 2>&1) | cut -f2 -d' ')
+        copla: \$( copla --version | cut -f2 -d' ')
     END_VERSIONS
     """
 }

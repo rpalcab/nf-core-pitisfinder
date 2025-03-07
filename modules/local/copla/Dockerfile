@@ -21,11 +21,8 @@ COPY copla .
 # Añadir copla al $PATH del sistema
 RUN echo 'export PATH="$PATH:/data/app/bin"' >> ~/.bashrc
 
-# Instalar COPLA en su entorno de conda
-RUN conda env create -f /data/app/copla.environment.yml -n copla
-
-# Instalar MacSyFinder en su entorno separado
-RUN conda env create -f /data/app/macsyfinder.environment.yml -n macsyfinder
+# Instalar entornos de COPLA y MacSyFinder
+RUN conda env create -f /data/app/copla.environment.yml -n copla && conda env create -f /data/app/macsyfinder.environment.yml -n macsyfinder 
 
 # Ejecutar conda init para bash y configurar el sourcing de conda.sh
 RUN /bin/bash -c "conda init bash && echo 'source /opt/conda/etc/profile.d/conda.sh && conda activate copla' >> ~/.bashrc"
@@ -51,10 +48,10 @@ RUN wget https://github.com/lmrodriguezr/enveomics/raw/master/Scripts/ani.rb -P 
     chmod +x /data/app/bin/ani.rb
 
 # Crear un enlace simbólico para que el ejecutable se encuentre en PATH
-RUN ln -s /data/app/bin/copla.py /usr/local/bin/copla
-
-# Descargar bases de datos de COPLA
-RUN /data/app/bin/download_Copla_databases.sh
+RUN ln -s /data/app/bin/copla.py /usr/local/bin/copla && \
+    ln -s /data/app/bin/download_Copla_databases.sh /usr/local/bin/download_Copla_databases && \
+    ln -s /data/app/bin/generate_test_output.sh /usr/local/bin/generate_test_output && \
+    ln -s /data/app/bin/post_install_test.sh /usr/local/bin/post_install_test
 
 # Copiar el script de activación de MacSyFinder dentro del contenedor
 RUN echo 'source /opt/conda/etc/profile.d/conda.sh && conda activate macsyfinder && exec "$@"' > /usr/local/bin/run_macsyfinder.sh

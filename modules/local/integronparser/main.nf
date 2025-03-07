@@ -12,8 +12,6 @@ process INTEGRON_FINDER {
 
     output:
     tuple val(meta), path("${meta.id}"), emit: outdir
-    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons
-    tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk
     path "versions.yml", emit: versions
 
     when:
@@ -22,13 +20,12 @@ process INTEGRON_FINDER {
     script:
     def prefix = "${meta.id}"
     """
-    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix} --func-annot --gbk
-    mv ${prefix}/Results_Integron_Finder_${prefix}/* ${prefix}/
-    rmdir ${prefix}/Results_Integron_Finder_${prefix}/
+    echo 'integron_finder'
+    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        integron_finder: \$(integron_finder --version | head -n1 | sed 's/^integron_finder version //'))
+        integron_finder: \$(echo \$(integron_finder --version 2>&1) | cut -f2 -d' ')
     END_VERSIONS
     """
 
@@ -38,7 +35,7 @@ process INTEGRON_FINDER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        integron_finder: \$(integron_finder --version | head -n1 | sed 's/^integron_finder version //'))
+        integron_finder: \$(echo \$(integron_finder --version 2>&1) | head -n1 | sed 's/^integron_finder version //')
     END_VERSIONS
     """
 }
