@@ -4,8 +4,8 @@ process COPLA {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://rpalcab/copla:dev' :
-        'docker.io/rpalcab/copla:dev' }"
+        'docker://rpalcab/copla:1.0' :
+        'docker.io/rpalcab/copla:1.0' }"
 
     input:
     tuple val(meta), val(plasmid_name), path(file)
