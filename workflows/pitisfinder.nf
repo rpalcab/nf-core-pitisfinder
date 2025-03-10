@@ -10,7 +10,8 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
-include { COPLA } from '../modules/local/copla/main'
+include { COPLA_COPLADBDOWNLOAD } from '../modules/local/copla/copladbdownload/main'
+include { COPLA_COPLA } from '../modules/local/copla/copla/main'
 include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
 
 /*
@@ -70,23 +71,33 @@ workflow PITISFINDER {
     //
 
     // MOBSUITE RECON
-    ch_plasmids = MOBSUITE_RECON (ch_fasta).plasmids
+    ch_mobsuite = MOBSUITE_RECON (ch_fasta).plasmids
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
 
     // RENAME PLASMIDS
     // OJO! Ya no filtra por tamaño
-    ch_filtered = RENAME_PLASMIDS (ch_plasmids)
+    ch_rename = RENAME_PLASMIDS (ch_mobsuite)
 
-    // COPLA
-    ch_filtered.flatMap { meta, fileList ->
+    
+    ch_rename.flatMap { meta, fileList ->
         // Si fileList no es una lista, lo tokenizamos (dividimos por espacios)
         def files = fileList instanceof List ? fileList : fileList.toString().tokenize(' ')
         files.collect { file -> 
             def plasmid_name = file.getName().toString().replaceFirst(/\.fasta$/, '')
             tuple(meta, plasmid_name, file) }
-    } | COPLA
+    }.set { ch_plasmids }
 
-    ch_versions = ch_versions.mix( COPLA.out.versions )
+    // COPLA
+    if (!params.copla_db){ 
+        COPLA_COPLADBDOWNLOAD ()
+        copla_db_path = COPLA_COPLADBDOWNLOAD.out.db
+    } else {
+        copla_db_path = params.copla_db
+    }
+
+    COPLA_COPLA ( ch_plasmids, copla_db_path )
+
+    ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
 
     //
     // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
