@@ -94,7 +94,7 @@ workflow PITISFINDER {
     } else {
         copla_db_path = params.copla_db
     }
-
+    
     COPLA_COPLA ( ch_plasmids, copla_db_path )
 
     ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
