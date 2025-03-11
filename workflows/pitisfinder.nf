@@ -13,6 +13,8 @@ include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
 include { COPLA_COPLADBDOWNLOAD } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA } from '../modules/local/copla/copla/main'
 include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
+include { IS_BLAST } from '../modules/local/isblast/main'
+include { IS_PARSE } from '../modules/local/isparser/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,32 +73,32 @@ workflow PITISFINDER {
     //
 
     // MOBSUITE RECON
-    ch_mobsuite = MOBSUITE_RECON (ch_fasta).plasmids
+    MOBSUITE_RECON (ch_fasta)
+    ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
+    ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
 
     // RENAME PLASMIDS
     // OJO! Ya no filtra por tamaño
-    ch_rename = RENAME_PLASMIDS (ch_mobsuite)
-
-    
-    ch_rename.flatMap { meta, fileList ->
-        // Si fileList no es una lista, lo tokenizamos (dividimos por espacios)
-        def files = fileList instanceof List ? fileList : fileList.toString().tokenize(' ')
-        files.collect { file -> 
-            def plasmid_name = file.getName().toString().replaceFirst(/\.fasta$/, '')
-            tuple(meta, plasmid_name, file) }
-    }.set { ch_plasmids }
+    ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
+    ch_rename
+        .flatMap { meta, plasmid_files ->
+            plasmid_files.collect { file ->
+                def plasmid_name = file.baseName
+                return tuple(meta, plasmid_name, file)
+            }
+        }
+        .set{ ch_plasmids }
 
     // COPLA
+    ch_copladb = Channel.empty()
     if (!params.copla_db){ 
         COPLA_COPLADBDOWNLOAD ()
-        copla_db_path = COPLA_COPLADBDOWNLOAD.out.db
+        ch_copladb = COPLA_COPLADBDOWNLOAD.out.db
     } else {
-        copla_db_path = params.copla_db
+        ch_copladb = Channel.value(params.copla_db)
     }
-    
-    COPLA_COPLA ( ch_plasmids, copla_db_path )
-
+    COPLA_COPLA ( ch_plasmids, ch_copladb)
     ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
 
     //
@@ -104,6 +106,20 @@ workflow PITISFINDER {
     //
     INTEGRON_FINDER (ch_fasta)
     ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
+
+    //
+    // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
+    //
+    ch_isdb = Channel.empty()
+    if (params.is_db){ 
+        ch_isdb = Channel.value(params.is_db)
+        // BLASTn search
+        IS_BLAST (ch_mobsuite_chr, ch_isdb)
+        ch_versions = ch_versions.mix( IS_BLAST.out.versions )
+        // Results filtering
+        ch_raw_is = IS_BLAST.out.report
+        IS_PARSE (ch_raw_is)
+    }
 
     //
     // Collate and save software versions
