@@ -14,4 +14,3 @@ test_samples/
 expected_copla.txt
 .samplesdir.txt
 modules/local/copla/Dockerfile*
-modules/local/copla/copla/
