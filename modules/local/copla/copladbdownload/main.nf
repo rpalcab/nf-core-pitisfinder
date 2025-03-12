@@ -7,7 +7,7 @@ process COPLA_COPLADBDOWNLOAD {
         'docker.io/rpalcab/copla:1.0light' }"
 
     output:
-    path "databases/", emit: db
+    path "databases", emit: db
 
     when:
     task.ext.when == null || task.ext.when
