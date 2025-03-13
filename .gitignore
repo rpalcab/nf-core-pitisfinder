@@ -1,15 +1,12 @@
 .nextflow*
 work/
-data/
 results/
 .DS_Store
-testing/
 testing*
 *.pyc
 null/
-assets/schema_input (Copy).json
 out_test/
-samplesheet*.csv
+./samplesheet.csv
 test_samples/
 expected_copla.txt
 .samplesdir.txt
@@ -18,4 +15,3 @@ data/*.fasta
 data/*.gff3
 data/*.tab
 minimal_test/
-
