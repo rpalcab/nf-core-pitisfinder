@@ -20,7 +20,7 @@ process INTEGRON_PARSER {
     def prefix = "${meta.id}"
     """
     echo "integron_parser $prefix $fasta $integrons $ann $res"
-    integron_parser.py -i $integrons -f $fasta -a $ann -r $res -o .
+    integron_parser.py -i $integrons -f $fasta -a $ann -r $res -s $prefix -o .
     """
 
     stub:
