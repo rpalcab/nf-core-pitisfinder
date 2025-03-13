@@ -12,8 +12,8 @@ process INTEGRON_FINDER {
 
     output:
     tuple val(meta), path("${meta.id}"), emit: outdir
-    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons
-    tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk
+    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons, optional: true
+    tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk, optional: true
     path "versions.yml", emit: versions
 
     when:

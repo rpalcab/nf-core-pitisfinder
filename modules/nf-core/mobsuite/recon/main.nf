@@ -15,7 +15,7 @@ process MOBSUITE_RECON {
     tuple val(meta), path("mobsuite/contig_report.txt")   , emit: contig_report
     tuple val(meta), path("mobsuite/plasmid_*.fasta")     , emit: plasmids        , optional: true
     tuple val(meta), path("mobsuite/mobtyper_results.txt"), emit: mobtyper_results, optional: true
-    path "versions.yml"                                  , emit: versions
+    path "versions.yml"                                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

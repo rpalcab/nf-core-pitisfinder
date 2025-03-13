@@ -13,3 +13,4 @@ expected_copla.txt
 modules/local/copla/Dockerfile*
 data/
 minimal_test/
+flowchart.png

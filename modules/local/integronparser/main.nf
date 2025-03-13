@@ -1,18 +1,17 @@
-process INTEGRON_FINDER {
+process INTEGRON_PARSER {
     tag "$meta.id"
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://quay.io/repository/biocontainers/integron_finder:2.0.5--pyhdfd78af_0':
-        'biocontainers/integron_finder:2.0.5--pyhdfd78af_0' }"
-
+        'docker://rpalcab/pitis_parser:1.0':
+        'docker.io/rpalcab/pitis_parser:1.0' }"
     input:
-    tuple val(meta), path(fasta)
+    tuple val(meta), path(fasta), path(ann), path(res), path(integrons)
 
     output:
-    tuple val(meta), path("${meta.id}"), emit: outdir
-    path "versions.yml", emit: versions
+    //tuple val(meta), path("${meta.id}/IS_chr_filtered.tsv"), emit: report
+    stdout
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,22 +19,12 @@ process INTEGRON_FINDER {
     script:
     def prefix = "${meta.id}"
     """
-    echo 'integron_finder'
-    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        integron_finder: \$(echo \$(integron_finder --version 2>&1) | cut -f2 -d' ')
-    END_VERSIONS
+    echo "integron_parser $prefix $fasta $integrons $ann $res"
+    integron_parser.py -i $integrons -f $fasta -a $ann -r $res -o .
     """
 
     stub:
     """
-    mkdir -p ${prefix}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        integron_finder: \$(echo \$(integron_finder --version 2>&1) | head -n1 | sed 's/^integron_finder version //')
-    END_VERSIONS
+    echo "integron_parser $prefix $integrons $ann $res"
     """
 }

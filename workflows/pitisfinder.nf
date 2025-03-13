@@ -13,8 +13,9 @@ include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
 include { COPLA_COPLADBDOWNLOAD } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA } from '../modules/local/copla/copla/main'
 include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
+include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
 include { IS_BLAST } from '../modules/local/isblast/main'
-include { IS_PARSE } from '../modules/local/isparser/main'
+include { IS_PARSER } from '../modules/local/isparser/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,13 +84,13 @@ workflow PITISFINDER {
     ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
     ch_rename
         .flatMap { meta, plasmid_files ->
-            plasmid_files.collect { file ->
+            def file_list = plasmid_files instanceof List ? plasmid_files : [plasmid_files]
+            file_list.collect { file ->
                 def plasmid_name = file.baseName
                 return tuple(meta, plasmid_name, file)
             }
         }
         .set{ ch_plasmids }
-
     // COPLA
     ch_copladb = Channel.empty()
     if (!params.copla_db){ 
@@ -104,8 +105,14 @@ workflow PITISFINDER {
     //
     // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
     //
+    // Integron_finder
     INTEGRON_FINDER (ch_fasta)
     ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
+    ch_integron_raw = INTEGRON_FINDER.out.integrons
+    // Process results
+    ch_merged = ch_samplesheet
+        .join(ch_integron_raw)
+    INTEGRON_PARSER (ch_merged)
 
     //
     // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
@@ -118,7 +125,7 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix( IS_BLAST.out.versions )
         // Results filtering
         ch_raw_is = IS_BLAST.out.report
-        IS_PARSE (ch_raw_is)
+        IS_PARSER (ch_raw_is)
     }
 
     //

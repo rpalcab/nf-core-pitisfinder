@@ -1,11 +1,11 @@
-process IS_PARSE {
+process IS_PARSER {
     tag "$meta.id"
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker://continuumio/anaconda3:latest':
-        'docker.io/continuumio/anaconda3:latest' }"
+        'docker://rpalcab/pitis_parser:1.0':
+        'docker.io/rpalcab/pitis_parser:1.0' }"
     input:
     tuple val(meta), path(report_raw)
 
