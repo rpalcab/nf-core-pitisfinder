@@ -11,7 +11,5 @@ test_samples/
 expected_copla.txt
 .samplesdir.txt
 modules/local/copla/Dockerfile*
-data/*.fasta
-data/*.gff3
-data/*.tab
+data/
 minimal_test/
