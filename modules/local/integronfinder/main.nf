@@ -13,7 +13,7 @@ process INTEGRON_FINDER {
     output:
     tuple val(meta), path("${meta.id}"), emit: outdir
     tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons, optional: true
-    tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk, optional: true
+    // tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk, optional: true
     path "versions.yml", emit: versions
 
     when:
@@ -22,7 +22,7 @@ process INTEGRON_FINDER {
     script:
     def prefix = "${meta.id}"
     """
-    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix} --func-annot --gbk
+    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix} --func-annot
     mv ${prefix}/Results_Integron_Finder_${prefix}/* ${prefix}/
     rmdir ${prefix}/Results_Integron_Finder_${prefix}/
 

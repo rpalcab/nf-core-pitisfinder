@@ -10,21 +10,19 @@ process INTEGRON_PARSER {
     tuple val(meta), path(fasta), path(ann), path(res), path(integrons)
 
     output:
-    //tuple val(meta), path("${meta.id}/IS_chr_filtered.tsv"), emit: report
-    stdout
-
+    tuple val(meta), path("integrons_summary.tsv"), emit: report, optional: true
+    tuple val(meta), path("int_*.fasta"), emit: fastas, optional: true
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def prefix = "${meta.id}"
     """
-    echo "integron_parser $prefix $fasta $integrons $ann $res"
-    integron_parser.py -i $integrons -f $fasta -a $ann -r $res -s $prefix -o .
+    integron_parser.py -i $integrons -f $fasta -a $ann -r $res -s ${meta.id} -o .
     """
 
     stub:
     """
-    echo "integron_parser $prefix $integrons $ann $res"
+    touch integrons_summary.tsv
     """
 }

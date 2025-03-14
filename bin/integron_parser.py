@@ -17,123 +17,101 @@ def get_arguments():
     parser = argparse.ArgumentParser(prog = 'integron_parser.py', description = 'integron_parser.py is part of PITISfinder.')
 
     input_group = parser.add_argument_group('Input')
-    input_group.add_argument('-i', '--integron_file', dest="int_file", required=True, help="Required. Integron file to be filtered and processed", type=os.path.abspath)
-    input_group.add_argument('-f', '--fasta_file', dest="fa_file", required=True, help="Required. Fasta file to be processed", type=os.path.abspath)
-    input_group.add_argument('-a', '--ann_file', dest="ann_file", required=True, help="Required. Annotation (.gff, .gff3) file to be processed", type=os.path.abspath)
-    input_group.add_argument('-r', '--res_file', dest="res_file", required=True, help="Required. Resistance annotation file (.tab) to be processed", type=os.path.abspath)
-    input_group.add_argument('-s', '--sample', dest="sample", required=True, help="Required. Sample name", type=os.path.abspath)
+    input_group.add_argument('-i', '--integron_file', dest="int_file", type=os.path.abspath,
+                             required=True, help="Required. Integron file to be filtered and processed")
+    input_group.add_argument('-f', '--fasta_file', dest="fa_file", required=True, type=os.path.abspath, 
+                             help="Required. Fasta file to be processed")
+    input_group.add_argument('-a', '--ann_file', dest="ann_file", required=True, type=os.path.abspath, 
+                             help="Required. Annotation (.gff, .gff3) file to be processed")
+    input_group.add_argument('-r', '--res_file', dest="res_file", required=True, type=os.path.abspath, 
+                             help="Required. Resistance annotation file (.tab) to be processed")
+    input_group.add_argument('-s', '--sample', dest="sample", required=True, help="Required. Sample name", type=str)
 
     tuning_group = parser.add_argument_group('Tuning parameters')
-    tuning_group.add_argument('-n', '--nts_diff', dest="nts_diff", default=10, help="Coordinates differences tolerated when merging annotations. Default: 10", type=int)
-    tuning_group.add_argument('-id', '--id_perc', dest="id_perc", default=90, help="Minimum ID percentage required for antomicrobial resistance identification. Default: 90", type=int)
-    tuning_group.add_argument('-c', '--q_cov', dest="q_cov", default=80, help="Minimum query coverage required for antomicrobial resistance identification. Default: 80", type=int)
-
+    tuning_group.add_argument('--nts_diff', dest="nts_diff", default=10, type=int, 
+                              help="Coordinates differences tolerated when merging annotations. Default: 10")
+    tuning_group.add_argument('--id_perc', dest="id_perc", default=90, type=int, 
+                              help="Minimum ID percentage required for antomicrobial resistance identification. Default: 90")
+    tuning_group.add_argument('--q_cov', dest="q_cov", default=80, type=int, 
+                              help="Minimum query coverage required for antomicrobial resistance identification. Default: 80")
+    tuning_group.add_argument('--max_cas', dest="max_cassettes", default=12, type=int, 
+                              help="Maximum cassettes in integron. Default: 12")
+    
     output_group = parser.add_argument_group('Output')
-    output_group.add_argument('-o', '--out_dir', dest='out_dir', required=True, help='Required. Final output folder for reports', type=os.path.abspath)
+    output_group.add_argument('-o', '--out_dir', dest='out_dir', required=True, type=os.path.abspath,
+                              help='Required. Final output folder for reports')
 
     arguments = parser.parse_args()
 
     return arguments
 
-# %%
 def read_abr(res_file, contig, d_info, pid, qcov):
     df = pd.read_table(res_file, dtype={'START': 'int64', 'END': 'int64'})
-    df.drop(df.loc[(df['%COVERAGE'] < qcov) | (df['%IDENTITY'] < pid)].index, inplace=True)
-    df = df[(df.SEQUENCE == contig) & (df.START > d_info['start']) & (df.END < d_info['end'])]
+    df.drop(df.loc[(df['%COVERAGE'] < qcov) | (df['%IDENTITY'] < pid)].index, inplace=True)     # Remove low quality hits
+    df = df[(df.SEQUENCE == contig) & (df.START > d_info['start']) & (df.END < d_info['end'])]  # Keep genes inside integron
     return df
 
-# %%
 def read_gff(ann_file, contig, d_info):
-    with open(ann_file) as infile:
+    with open(ann_file) as infile:                                                              # Open gff file and parse
         records = list(GFF.parse(infile))
     gff_data = []
     for record in records:
         for feature in record.features:
             gff_data.append([record.id, feature.type, feature.location.start, 
-                             feature.location.end, feature.location.strand, feature.qualifiers.get('Name'), feature.qualifiers.get('gene')])
+                             feature.location.end, feature.location.strand, 
+                             feature.qualifiers.get('Name', [None])[0], feature.qualifiers.get('gene', [None])[0]])
 
     df0 = pd.DataFrame(gff_data, columns=["seqid", "type", "start", "end", "strand", "name", "gene"])
-    df = df0[(df0.type == 'CDS') & (df0.seqid == contig) & (df0.start > d_info['start']) & (df0.end < d_info['end'])]
+    df = df0[(df0.type == 'CDS') & (df0.seqid == contig) & 
+             (df0.start > d_info['start']) & (df0.end < d_info['end'])]   # Keep genes inside integron
     return df
 
-def get_annotation(row, df, start, end, annotation, nts_diff):
-    df_filtered = df[(abs(df[start] - row['pos_beg']) <= nts_diff) &
+def read_annotation(row, df, start, end, annotation, nts_diff):
+    df_filtered = df[(abs(df[start] - row['pos_beg']) <= nts_diff) &    # Takes annotation in region
                      (abs(df[end] - row['pos_end']) <= nts_diff)]
-    if not df_filtered.empty and annotation != None:
-        return df_filtered.iloc[0][annotation]
-    return None
+    return df_filtered[annotation].iloc[0] if not df_filtered.empty else None   # Returns annotation if it exists
+
+def update_annotation(row, df_ann, df_abr, nts_diff):
+        if row.annotation in {'attC', 'intI'}:
+            return row.annotation
+        
+        new_annot = read_annotation(row, df_abr, 'START', 'END', 'GENE', nts_diff) or \
+                    read_annotation(row, df_ann, 'start', 'end', 'gene', nts_diff)
+        
+        return new_annot if new_annot is not None else row.annotation
 
 def merge_annotations(subdf, df_ann, df_abr, nts_diff):
-    merged_annotations = []
-    for idx, row in subdf.iterrows():
-        annot = row.annotation
-        if (annot == 'attC') | (annot == 'intI'):
-            merged_annotations.append(annot)
-            continue
-        # Check if present in abricate annotation
-        new_annot = get_annotation(row, df_abr, 'START', 'END', 'GENE', nts_diff)
-        if pd.isnull(new_annot):
-            # If not, check in bakta annotation
-            new_annot = get_annotation(row, df_ann, 'start', 'end', 'gene', nts_diff)
-        else: 
-            merged_annotations.append(new_annot)
-            continue
-        if pd.isnull(new_annot):
-            # Si aún no hay match, usamos la anotación original de subdf
-            merged_annotations.append(annot)
-        else: 
-            merged_annotations.append(new_annot)
-
-    subdf['merged_annotation'] = merged_annotations
+    subdf = subdf.copy()
+    subdf['merged_annotation'] = subdf.apply(lambda row:update_annotation(row, df_ann, df_abr, nts_diff), axis=1)
     return subdf
 
-# %%
+def save_sequence(unified_df, fa_file):
+    cont = unified_df['Contig'].values[0]
+    start = unified_df['Start'].values[0] - 1
+    end = unified_df['End'].values[0] - 1
+    name = unified_df['Name'].values[0]
+
+    for seq_record in SeqIO.parse(fa_file, "fasta"):
+        if seq_record.id == cont:
+            d = {name: str(seq_record.seq[start:end])}
+            write_fasta(f'{name}.fasta', d)
+            break
+    return None
+
 def write_fasta(cds_output_file, d_int):
     with open(cds_output_file, "w") as cds_output_handle:
         for k, v in d_int.items():
-            cds_output_handle.write(k + "\n")
+            cds_output_handle.write(f'>{k}' + "\n")
             cds_output_handle.write(v + "\n")
     return None
 
-# %%
-def extract_fastas(gbk_file, cds_output_file, fna_file, integron):
-    # Abrir archivo GBK y los archivos de salida
-    with open(gbk_file, "r") as input_handle:
-        for record in SeqIO.parse(input_handle, "genbank"):
-            flag = 0
-            d_int = {}
-            d_nucl = {}
-            for feature in record.features:
-                # Obtener las coordenadas de inicio y final
-                start = feature.location.start + 1  # +1 para coordenadas 1-based
-                end = feature.location.end
-                # Extraer la secuencia del integrón
-                if "integron" in feature.type and feature.qualifiers.get('integron_id')[0] == integron:
-                    flag = 1
-                    integron_seq = feature.extract(record.seq)
-                    integron_header = f'>{integron}_{start}_{end}'
-                    d_nucl[integron_header] = str(integron_seq)
-                # Extraer y guardar las secuencias de CDS
-                elif feature.type == "CDS" and flag == 1:
-                    # Extraer la secuencia de CDS
-                    cds_seq = feature.extract(record.seq)
-                    # Obtener ID o locus_tag
-                    protein_id = feature.qualifiers.get('protein_id', ['Unknown'])[0]
-                    # Escribir en el archivo FASTA
-                    header = f">{protein_id}_{start}_{end}"
-                    d_int[header] = str(cds_seq)
-                
-                elif "integron" in feature.type:
-                    flag = 0
+def get_cassettes(unified_df, count, sample):
+    l_cassettes = unified_df.loc[(unified_df['type_elt'] == 'protein') & 
+                                 (unified_df['annotation'] != 'intI')]['merged_annotation'].to_list()
+    cassettes = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in l_cassettes])
+    name = f'int_{cassettes}_{sample}_{count}'
+    return l_cassettes, name
 
-        # Secuencia nucl. del integrón (fna)
-        write_fasta(fna_file, d_nucl)
-        # Secuencias CDS del integrón (faa)
-        write_fasta(cds_output_file, d_int)
-            
-    return d_int
-
-# %%
 def basic_info(subdf):
     d_info = {}
     # Integrase info
@@ -142,7 +120,6 @@ def basic_info(subdf):
     integrase_strand = integrase_row['strand']
     if integrase_strand > 0:        # Redirect dataframe (int is always at the beginning)
         subdf = subdf[::-1]
-    
     # Integron coords and size
     d_info['start'] = min(subdf['pos_beg'])
     d_info['end'] = max(subdf['pos_end'])
@@ -150,65 +127,14 @@ def basic_info(subdf):
 
     return d_info, subdf
 
-    # try:
-    #     # extraer faa y fna de los integrones
-    #     gbk_file = input_path + f'/{replicon}.gbk'
-    #     cds_output_file = input_path + f'/{replicon}_{integron}.faa'
-    #     fna_file = input_path + f'/{replicon}_{integron}.fna'
-    #     d_int = extract_fastas(gbk_file, cds_output_file, fna_file, integron)
-    # except:
-    #     print(f'Error en el parseo de GBK. Comprueba la integridad de {gbk_file}')
-    #     return None
+def merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, max_cassettes):
+    cassettes = (cassettes[:max_cassettes] + [None] * 
+                (max_cassettes - len(cassettes[:max_cassettes])))                             # Truncate cassettes if too many, add None if too few
+    row = [sample, contig, integron_name, d_info['size'], d_info['start'], 
+           d_info['end'], d_info['integrase_model']] + cassettes    # Create row to append
+    summary_df.loc[len(summary_df)] = row
+    return summary_df
 
-    # df_abr = pd.DataFrame(columns = ['pos_beg', 'pos_end', 'abr_ann'])
-    # df_prokka = pd.DataFrame(columns = ['pos_beg', 'pos_end', 'prokka_ann'])
-    # # Si hay CDS en el integrón, anotarlos con prokka y abricate
-    # if len(d_int.keys()) > 0:
-    #     prokka_dir, abr_out = annotate_cds(cds_output_file, input_path, replicon, integron)
-    #     df_prokka = prokka_parse(prokka_dir)
-    #     df_abr = abr_parse(abr_out)
-    # # mergear con las anotaciones, priorizar abricate y reorientar df si necesario
-    # subdf['pos_beg'] = subdf['pos_beg'].astype('int64')
-    # subdf['pos_end'] = subdf['pos_end'].astype('int64')
-    # mid_df = pd.merge(subdf, df_prokka, on=['pos_beg', 'pos_end'], how='outer')
-    # final_df = pd.merge(mid_df, df_abr, on=['pos_beg', 'pos_end'], how='outer')
-    # final_df['ann'] = final_df['abr_ann'].fillna(final_df['prokka_ann'])
-    # final_df.drop_duplicates(inplace=True)
-
-    
-    # # group cassettes
-    # cassettes = []
-    # current_cassette = []
-
-    # for _, row in final_df.iterrows():
-    #     if row['type_elt'] == 'attC':
-    #         cassettes.append(current_cassette)
-    #         current_cassette = []
-    #     elif row['type_elt'] == 'protein' and row['annotation'] != 'intI':
-    #         if pd.isnull(row['ann']):
-    #             ann = "NA;hypothetical protein"
-    #         else:
-    #             ann = row['ann']
-    #         current_cassette.append(ann)
-
-    # # Por si acaso no se reconoce el último attC
-    # cassettes.append(current_cassette)
-    # # y eliminamos cassettes vacíos (?)
-    # cassettes = [i for i in cassettes if i != []]
-    # genes = '_'.join([i[0].split(';')[0] for i in cassettes])
-    # genes = re.sub(r'[^a-zA-Z0-9\-\_]', '', genes)
-
-
-    # name = f'int_{genes}_{sample}_{count}'
-    # # for i in cassettes: info.append(i)
-    # for i in cassettes: info.append(','.join(i))
-    # info.extend([""] * (20-len(info)))
-
-    # # Guardamos secuencia nucleotídica
-    # cp_cmd = ['cp', fna_file, f'{original_path}/11_integrons/{name}.fasta']
-    # subprocess.run(cp_cmd)
-
-# %%
 if __name__ == "__main__":
 
     # Parameters
@@ -238,51 +164,20 @@ if __name__ == "__main__":
         print(f'No complete integrons in {sample}')
         exit()
 
-    # Create empty summary df
-    summary_df = pd.DataFrame(columns=['Sample', 'Contig', 'Name', 'Size', 'Start', 'End', 'Integrase', 'Cassette 1',
-                                        'Cassette 2', 'Cassette 3', 'Cassette 4', 'Cassette 5', 'Cassette 6', 'Cassette 7', 
-                                        'Cassette 8', 'Cassette 9', 'Cassette 10', 'Cassette 11', 'Cassette 12'])
-
+    # Empty dataframe with {max_cassettes} cassettes
+    summary_df = pd.DataFrame(columns=['Sample', 'Contig', 'Name', 'Size', 'Start', 'End', 'Integrase'] +   
+                                      [f'Cassette {i+1}' for i in range(args.max_cassettes)])
+    
     # Divide into integrons and chromosomes
     df_grouped = df_integrons.groupby(['ID_replicon', 'ID_integron'])
 
     for count, ((contig, integron), subdf) in enumerate(df_grouped):    # keep count of integron number
-        d_info, subdf = basic_info(subdf)
-        df_ann = read_gff(ann_file, contig, d_info)
-        df_abr = read_abr(res_file, contig, d_info, args.id_perc, args.q_cov)
-        df_ann.to_csv(f'{report_out}_gff')
-        unified_df = merge_annotations(subdf, df_ann, df_abr, args.nts_diff)
-        # summary_df.loc[len(summary_df)] = info
+        d_info, subdf = basic_info(subdf)                               # Read coordinates
+        df_ann = read_gff(ann_file, contig, d_info)                     # Read bakta annotation
+        df_abr = read_abr(res_file, contig, d_info, args.id_perc, args.q_cov)   # Read abricate annotation
+        unified_df = merge_annotations(subdf, df_ann, df_abr, args.nts_diff)    # Update annotations: abr > bakta > i_f
+        cassettes, integron_name = get_cassettes(unified_df, count, sample)                     # get cassette, get name
+        summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cassettes)
+        save_sequence(summary_df, fa_file)                                    # Save integron sequence (read fasta, get coordinates, save sequence)
 
     summary_df.to_csv(report_out, index=False)
-
-
-    # Integron files
-
-    # original_path = os.path.abspath(sys.argv[1])
-    # summary_df = pd.DataFrame(columns=['Sample', 'Pl/Chr', 'Name', 'Size', 'Inicio', 'Final', 'Tipo', 'Integrasa', 'Cassette 1',
-    #                                     'Cassette 2', 'Cassette 3', 'Cassette 4', 'Cassette 5', 'Cassette 6',
-    #                                     'Cassette 7', 'Cassette 8', 'Cassette 9', 'Cassette 10', 'Cassette 11', 'Cassette 12'])
-    # for integron_file in glob.glob(f'{original_path}/11_integrons/*/Results_Integron_Finder_*/*.integrons'):
-    #     input_path = os.path.dirname(os.path.abspath(integron_file))
-    #     sample = input_path.split('/')[-2]
-    #     print(sample)
-    #     try:
-    #         df_integron = pd.read_table(integron_file, comment='#')
-    #     except:
-    #         print(f'No integrons in {sample}')
-    #         continue
-
-    #     # Divide into integrons and chromosomes (cada cromosoma resetea el número de integrón, así que puede haber varios integron_01 por muestra)
-    #     grouped = df_integron.groupby(['ID_replicon', 'ID_integron'])
-    #     subdfs = {}
-
-    #     for count, ((replicon, integron), group) in enumerate(grouped):
-    #         key = f"{replicon}_{integron}"
-    #         subdfs[key] = group
-    #         info = extract_info(sample, subdfs[key], replicon, integron, input_path, original_path, count)
-    #         if info:
-    #             summary_df.loc[len(summary_df)] = info
-
-    # summary_df.to_csv(f'{original_path}/11_integrons/integron_summary.csv', index=False)
-    # print(f'Integron summary in {original_path}/11_integrons/integron_summary.csv')
