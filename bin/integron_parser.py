@@ -3,12 +3,9 @@
 # Created by Rosaía Palomino-Cabrera
 
 import pandas as pd
-import subprocess
 from Bio import SeqIO
 from BCBio import GFF
 import os
-import glob
-import sys
 import re
 import argparse
 
@@ -45,11 +42,19 @@ def get_arguments():
 
     return arguments
 
-def read_abr(res_file, contig, d_info, pid, qcov):
-    df = pd.read_table(res_file, dtype={'START': 'int64', 'END': 'int64'})
-    df.drop(df.loc[(df['%COVERAGE'] < qcov) | (df['%IDENTITY'] < pid)].index, inplace=True)     # Remove low quality hits
-    df = df[(df.SEQUENCE == contig) & (df.START > d_info['start']) & (df.END < d_info['end'])]  # Keep genes inside integron
-    return df
+def basic_info(subdf):
+    d_info = {}
+    # Integrase info
+    integrase_row = subdf[subdf['annotation'] == 'intI'].iloc[0]
+    d_info['integrase_model'] = integrase_row['model']
+    integrase_strand = integrase_row['strand']
+    if integrase_strand > 0:        # Redirect dataframe (int is always at the beginning)
+        subdf = subdf[::-1]
+    # Integron coords and size
+    d_info['start'] = min(subdf['pos_beg'])
+    d_info['end'] = max(subdf['pos_end'])
+    d_info['size'] = d_info['end'] - d_info['start']
+    return d_info, subdf
 
 def read_gff(ann_file, contig, d_info):
     with open(ann_file) as infile:                                                              # Open gff file and parse
@@ -64,6 +69,12 @@ def read_gff(ann_file, contig, d_info):
     df0 = pd.DataFrame(gff_data, columns=["seqid", "type", "start", "end", "strand", "name", "gene"])
     df = df0[(df0.type == 'CDS') & (df0.seqid == contig) & 
              (df0.start > d_info['start']) & (df0.end < d_info['end'])]   # Keep genes inside integron
+    return df
+
+def read_abr(res_file, contig, d_info, pid, qcov):
+    df = pd.read_table(res_file, dtype={'START': 'int64', 'END': 'int64'})
+    df.drop(df.loc[(df['%COVERAGE'] < qcov) | (df['%IDENTITY'] < pid)].index, inplace=True)     # Remove low quality hits
+    df = df[(df.SEQUENCE == contig) & (df.START > d_info['start']) & (df.END < d_info['end'])]  # Keep genes inside integron
     return df
 
 def read_annotation(row, df, start, end, annotation, nts_diff):
@@ -85,47 +96,12 @@ def merge_annotations(subdf, df_ann, df_abr, nts_diff):
     subdf['merged_annotation'] = subdf.apply(lambda row:update_annotation(row, df_ann, df_abr, nts_diff), axis=1)
     return subdf
 
-def save_sequence(unified_df, fa_file):
-    cont = unified_df['Contig'].values[0]
-    start = unified_df['Start'].values[0] - 1
-    end = unified_df['End'].values[0] - 1
-    name = unified_df['Name'].values[0]
-
-    for seq_record in SeqIO.parse(fa_file, "fasta"):
-        if seq_record.id == cont:
-            d = {name: str(seq_record.seq[start:end])}
-            write_fasta(f'{name}.fasta', d)
-            break
-    return None
-
-def write_fasta(cds_output_file, d_int):
-    with open(cds_output_file, "w") as cds_output_handle:
-        for k, v in d_int.items():
-            cds_output_handle.write(f'>{k}' + "\n")
-            cds_output_handle.write(v + "\n")
-    return None
-
 def get_cassettes(unified_df, count, sample):
     l_cassettes = unified_df.loc[(unified_df['type_elt'] == 'protein') & 
                                  (unified_df['annotation'] != 'intI')]['merged_annotation'].to_list()
     cassettes = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in l_cassettes])
     name = f'int_{cassettes}_{sample}_{count}'
     return l_cassettes, name
-
-def basic_info(subdf):
-    d_info = {}
-    # Integrase info
-    integrase_row = subdf[subdf['annotation'] == 'intI'].iloc[0]
-    d_info['integrase_model'] = integrase_row['model']
-    integrase_strand = integrase_row['strand']
-    if integrase_strand > 0:        # Redirect dataframe (int is always at the beginning)
-        subdf = subdf[::-1]
-    # Integron coords and size
-    d_info['start'] = min(subdf['pos_beg'])
-    d_info['end'] = max(subdf['pos_end'])
-    d_info['size'] = d_info['end'] - d_info['start']
-
-    return d_info, subdf
 
 def merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, max_cassettes):
     cassettes = (cassettes[:max_cassettes] + [None] * 
@@ -134,6 +110,28 @@ def merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, max
            d_info['end'], d_info['integrase_model']] + cassettes    # Create row to append
     summary_df.loc[len(summary_df)] = row
     return summary_df
+
+def write_fasta(cds_output_file, d_int):
+    with open(cds_output_file, "w") as cds_output_handle:
+        for k, v in d_int.items():
+            cds_output_handle.write(f'>{k}' + "\n")
+            cds_output_handle.write(v + "\n")
+    return None
+
+def save_sequence(unified_df, fa_file):
+    cont = unified_df['Contig']
+    start = unified_df['Start'] - 1
+    end = unified_df['End'] - 1
+    name = unified_df['Name']
+
+    for seq_record in SeqIO.parse(fa_file, "fasta"):
+        if seq_record.id == cont:
+            d = {name: str(seq_record.seq[start:end])}
+            write_fasta(f'{name}.fasta', d)
+            break
+    return None
+
+
 
 if __name__ == "__main__":
 
@@ -178,6 +176,6 @@ if __name__ == "__main__":
         unified_df = merge_annotations(subdf, df_ann, df_abr, args.nts_diff)    # Update annotations: abr > bakta > i_f
         cassettes, integron_name = get_cassettes(unified_df, count, sample)                     # get cassette, get name
         summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cassettes)
-        save_sequence(summary_df, fa_file)                                    # Save integron sequence (read fasta, get coordinates, save sequence)
+        save_sequence(summary_df.iloc[-1], fa_file)                                    # Save integron sequence (read fasta, get coordinates, save sequence)
 
     summary_df.to_csv(report_out, index=False)
