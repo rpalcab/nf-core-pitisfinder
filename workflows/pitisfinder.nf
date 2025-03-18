@@ -16,6 +16,8 @@ include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
 include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
 include { IS_BLAST } from '../modules/local/isblast/main'
 include { IS_PARSER } from '../modules/local/isparser/main'
+include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
+include { PHASTEST_PHASTEST } from '../modules/local/phastest/phastest/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,6 +129,20 @@ workflow PITISFINDER {
         ch_raw_is = IS_BLAST.out.report
         IS_PARSER (ch_raw_is)
     }
+
+    //
+    // PHASTEST
+    //
+    ch_phastestdb = Channel.empty()
+    if (!params.phastest_db){ 
+        PHASTEST_PHASTESTDBDOWNLOAD ()
+        ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
+    } else {
+        ch_phastestdb = Channel.value(params.phastest_db)
+    }
+    PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
+    
+    // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
 
     //
     // Collate and save software versions
