@@ -1,3 +1,4 @@
+name: copla2
 channels:
   - rwest
   - vgauthier
@@ -193,3 +194,4 @@ dependencies:
   - zlib=1.2.11=h516909a_1010
   - zstandard=0.14.1=py39he80948d_0
   - zstd=1.4.5=h6597ccf_2
+prefix: /home/usuario/miniconda3/envs/copla2

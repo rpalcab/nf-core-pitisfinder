@@ -42,6 +42,12 @@
                     "description": "Path to IS database (.fasta). If none is provided, IS will not be performed.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "phastest_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to PHASTEST databases. See https://phastest.ca/databases for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "email": {
                     "type": "string",
                     "description": "Email address for completion summary.",
