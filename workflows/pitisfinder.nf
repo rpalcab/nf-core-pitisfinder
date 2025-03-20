@@ -74,75 +74,88 @@ workflow PITISFINDER {
     //
     // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
     //
+    if ( !params.skip_plasmids ) {
+        // MOBSUITE RECON
+        MOBSUITE_RECON (ch_fasta)
+        ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
+        ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
+        ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
 
-    // MOBSUITE RECON
-    MOBSUITE_RECON (ch_fasta)
-    ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
-    ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
-    ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
-
-    // RENAME PLASMIDS
-    // OJO! Ya no filtra por tamaño
-    ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
-    ch_rename
-        .flatMap { meta, plasmid_files ->
-            def file_list = plasmid_files instanceof List ? plasmid_files : [plasmid_files]
-            file_list.collect { file ->
-                def plasmid_name = file.baseName
-                return tuple(meta, plasmid_name, file)
+        // RENAME PLASMIDS
+        // OJO! Ya no filtra por tamaño
+        ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
+        ch_rename
+            .flatMap { meta, plasmid_files ->
+                def file_list = plasmid_files instanceof List ? plasmid_files : [plasmid_files]
+                file_list.collect { file ->
+                    def plasmid_name = file.baseName
+                    return tuple(meta, plasmid_name, file)
+                }
             }
+            .set{ ch_plasmids }
+        // COPLA
+        ch_copladb = Channel.empty()
+        if (!params.copla_db){ 
+            COPLA_COPLADBDOWNLOAD ()
+            ch_copladb = COPLA_COPLADBDOWNLOAD.out.db
+        } else {
+            ch_copladb = Channel.value(params.copla_db)
         }
-        .set{ ch_plasmids }
-    // COPLA
-    ch_copladb = Channel.empty()
-    if (!params.copla_db){ 
-        COPLA_COPLADBDOWNLOAD ()
-        ch_copladb = COPLA_COPLADBDOWNLOAD.out.db
-    } else {
-        ch_copladb = Channel.value(params.copla_db)
-    }
-    COPLA_COPLA ( ch_plasmids, ch_copladb)
-    ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
-
-    //
-    // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
-    //
-    // Integron_finder
-    INTEGRON_FINDER (ch_fasta)
-    ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
-    ch_integron_raw = INTEGRON_FINDER.out.integrons
-    // Process results
-    ch_merged = ch_samplesheet
-        .join(ch_integron_raw)
-    INTEGRON_PARSER (ch_merged)
-
-    //
-    // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
-    //
-    ch_isdb = Channel.empty()
-    if (params.is_db){ 
-        ch_isdb = Channel.value(params.is_db)
-        // BLASTn search
-        IS_BLAST (ch_mobsuite_chr, ch_isdb)
-        ch_versions = ch_versions.mix( IS_BLAST.out.versions )
-        // Results filtering
-        ch_raw_is = IS_BLAST.out.report
-        IS_PARSER (ch_raw_is)
+        COPLA_COPLA ( ch_plasmids, ch_copladb)
+        ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
     }
 
-    //
-    // PHASTEST
-    //
-    ch_phastestdb = Channel.empty()
-    if (!params.phastest_db){ 
-        PHASTEST_PHASTESTDBDOWNLOAD ()
-        ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
-    } else {
-        ch_phastestdb = Channel.value(params.phastest_db)
+    if ( !params.skip_integrons ) {
+        //
+        // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
+        //
+        // Integron_finder
+        INTEGRON_FINDER (ch_fasta)
+        ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
+        ch_integron_raw = INTEGRON_FINDER.out.integrons
+        // Process results
+        ch_merged = ch_samplesheet
+            .join(ch_integron_raw)
+        INTEGRON_PARSER (ch_merged)
     }
-    PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
+
+    if ( !params.skip_is ) {
+        //
+        // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
+        //
+        ch_is_input = Channel.empty()
+        if ( !params.skip_plasmids ) {
+            ch_is_input = ch_mobsuite_chr
+        } else {
+            ch_is_input = ch_fasta
+        }
+        ch_isdb = Channel.empty()
+        if (params.is_db){ 
+            ch_isdb = Channel.value(params.is_db)
+            // BLASTn search
+            IS_BLAST (ch_is_input, ch_isdb)
+            ch_versions = ch_versions.mix( IS_BLAST.out.versions )
+            // Results filtering
+            ch_raw_is = IS_BLAST.out.report
+            IS_PARSER (ch_raw_is)
+        }
+    }
+
+    if ( !params.skip_prophages ) {
+        //
+        // PHASTEST
+        //
+        ch_phastestdb = Channel.empty()
+        if (!params.phastest_db){ 
+            PHASTEST_PHASTESTDBDOWNLOAD ()
+            ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
+        } else {
+            ch_phastestdb = Channel.value(params.phastest_db)
+        }
+        PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
+        // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
+    }
     
-    // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
 
     //
     // Collate and save software versions

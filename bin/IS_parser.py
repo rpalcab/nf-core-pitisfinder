@@ -37,23 +37,24 @@ def main():
     df = pd.read_table(report, sep='\t')
     header = ['IS', 'contig', 'qstart', 'qend', 'qlen', 'sstart0', 'send0', 'slen', 'pident', 'qcovhsp', 'length', 'mismatch', 'score', 'evalue']
     df.columns = header
+    df['contig'] = df['contig'].str.replace(r'^[a-zA-Z]+_', '', regex=True).astype(int)
 
-    coords = np.sort(df[['sstart0', 'send0']], axis=1)  # Redefines sequence coordinates in negative frames
+    coords = np.sort(df[['contig', 'sstart0', 'send0']], axis=1)  # Redefines sequence coordinates in negative frames
     df['sstart'] = coords[:, 0]
     df['send'] = coords[:, 1]
     df.drop(columns=['sstart0', 'send0'], inplace=True)
 
     # Drops hits with identical coords, keeps higher score hit
-    df.sort_values(by=["send","score"], ascending=[True, False], inplace=True)
-    df.drop_duplicates(subset='send', keep='first', inplace=True)           # End coords
-    df.sort_values(by=["sstart","score"], ascending=[True, False], inplace=True)
-    df.drop_duplicates(subset='sstart', keep='first', inplace=True)         # Start coords
+    df.sort_values(by=["contig", "send","score"], ascending=[True, True, False], inplace=True)
+    df.drop_duplicates(subset=["contig", 'send'], keep='first', inplace=True)           # End coords
+    df.sort_values(by=["contig", "sstart","score"], ascending=[True, True, False], inplace=True)
+    df.drop_duplicates(subset=["contig", 'sstart'], keep='first', inplace=True)         # Start coords
     df.reset_index(drop=True, inplace=True)
 
     # Drops overlapping hits
     filtered = []
     for _, row in df.iterrows():
-        while filtered and row['sstart'] < filtered[-1]['send']:
+        while filtered and row["contig"] == filtered[-1]['contig'] and row['sstart'] < filtered[-1]['send']:
             if row['score'] > filtered[-1]['score']:
                 filtered.pop()
             else:
