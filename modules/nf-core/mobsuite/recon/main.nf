@@ -15,7 +15,7 @@ process MOBSUITE_RECON {
     tuple val(meta), path("mobsuite/contig_report.txt")   , emit: contig_report
     tuple val(meta), path("mobsuite/plasmid_*.fasta")     , emit: plasmids        , optional: true
     tuple val(meta), path("mobsuite/mobtyper_results.txt"), emit: mobtyper_results, optional: true
-    path "versions.yml"                                   , emit: versions
+    path "versions.yml"                                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -45,10 +45,10 @@ process MOBSUITE_RECON {
 
     stub:
     """
-    mkdir -p results
+    mkdir -p mobsuite
 
-    touch chromosome.fasta
-    touch contig_report.txt
+    touch mobsuite/chromosome.fasta
+    touch mobsuite/contig_report.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

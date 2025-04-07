@@ -4,7 +4,7 @@ Changes in component 'nf-core/mobsuite/recon'
 Changes in 'mobsuite/recon/main.nf':
 --- modules/nf-core/mobsuite/recon/main.nf
 +++ modules/nf-core/mobsuite/recon/main.nf
-@@ -11,11 +11,11 @@
+@@ -11,10 +11,10 @@
      tuple val(meta), path(fasta)
  
      output:
@@ -12,15 +12,13 @@ Changes in 'mobsuite/recon/main.nf':
 -    tuple val(meta), path("results/contig_report.txt")   , emit: contig_report
 -    tuple val(meta), path("results/plasmid_*.fasta")     , emit: plasmids        , optional: true
 -    tuple val(meta), path("results/mobtyper_results.txt"), emit: mobtyper_results, optional: true
--    path "versions.yml"                                  , emit: versions
 +    tuple val(meta), path("mobsuite/chromosome.fasta")    , emit: chromosome
 +    tuple val(meta), path("mobsuite/contig_report.txt")   , emit: contig_report
 +    tuple val(meta), path("mobsuite/plasmid_*.fasta")     , emit: plasmids        , optional: true
 +    tuple val(meta), path("mobsuite/mobtyper_results.txt"), emit: mobtyper_results, optional: true
-+    path "versions.yml"                                   , emit: versions
+     path "versions.yml"                                  , emit: versions
  
      when:
-     task.ext.when == null || task.ext.when
 @@ -34,7 +34,7 @@
          --infile $fasta_name \\
          $args \\
@@ -30,14 +28,17 @@ Changes in 'mobsuite/recon/main.nf':
          --sample_id $prefix
  
      cat <<-END_VERSIONS > versions.yml
-@@ -47,8 +47,8 @@
+@@ -45,10 +45,10 @@
+ 
+     stub:
      """
-     mkdir -p results
+-    mkdir -p results
++    mkdir -p mobsuite
  
 -    touch results/chromosome.fasta
 -    touch results/contig_report.txt
-+    touch chromosome.fasta
-+    touch contig_report.txt
++    touch mobsuite/chromosome.fasta
++    touch mobsuite/contig_report.txt
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
