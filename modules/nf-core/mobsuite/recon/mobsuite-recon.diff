@@ -1,0 +1,47 @@
+Changes in component 'nf-core/mobsuite/recon'
+'modules/nf-core/mobsuite/recon/meta.yml' is unchanged
+'modules/nf-core/mobsuite/recon/environment.yml' is unchanged
+Changes in 'mobsuite/recon/main.nf':
+--- modules/nf-core/mobsuite/recon/main.nf
++++ modules/nf-core/mobsuite/recon/main.nf
+@@ -11,11 +11,11 @@
+     tuple val(meta), path(fasta)
+ 
+     output:
+-    tuple val(meta), path("results/chromosome.fasta")    , emit: chromosome
+-    tuple val(meta), path("results/contig_report.txt")   , emit: contig_report
+-    tuple val(meta), path("results/plasmid_*.fasta")     , emit: plasmids        , optional: true
+-    tuple val(meta), path("results/mobtyper_results.txt"), emit: mobtyper_results, optional: true
+-    path "versions.yml"                                  , emit: versions
++    tuple val(meta), path("mobsuite/chromosome.fasta")    , emit: chromosome
++    tuple val(meta), path("mobsuite/contig_report.txt")   , emit: contig_report
++    tuple val(meta), path("mobsuite/plasmid_*.fasta")     , emit: plasmids        , optional: true
++    tuple val(meta), path("mobsuite/mobtyper_results.txt"), emit: mobtyper_results, optional: true
++    path "versions.yml"                                   , emit: versions
+ 
+     when:
+     task.ext.when == null || task.ext.when
+@@ -34,7 +34,7 @@
+         --infile $fasta_name \\
+         $args \\
+         --num_threads $task.cpus \\
+-        --outdir results \\
++        --outdir mobsuite \\
+         --sample_id $prefix
+ 
+     cat <<-END_VERSIONS > versions.yml
+@@ -47,8 +47,8 @@
+     """
+     mkdir -p results
+ 
+-    touch results/chromosome.fasta
+-    touch results/contig_report.txt
++    touch chromosome.fasta
++    touch contig_report.txt
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+
+'modules/nf-core/mobsuite/recon/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/mobsuite/recon/tests/main.nf.test' is unchanged
+************************************************************
