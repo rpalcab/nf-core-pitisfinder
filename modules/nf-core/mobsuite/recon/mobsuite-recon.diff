@@ -1,5 +1,73 @@
 Changes in component 'nf-core/mobsuite/recon'
-'modules/nf-core/mobsuite/recon/meta.yml' is unchanged
+Changes in 'mobsuite/recon/meta.yml':
+--- modules/nf-core/mobsuite/recon/meta.yml
++++ modules/nf-core/mobsuite/recon/meta.yml
+@@ -31,9 +31,12 @@
+           description: |
+             Groovy Map containing sample information
+             e.g. [ id:'test', single_end:false ]
+-      - results/chromosome.fasta:
+-          type: file
+-          description: FASTA file of all contigs found to belong to the chromosome
++          pattern: "chromosome.fasta"
++      - mobsuite/chromosome.fasta:
++          type: map
++          description: |
++            Groovy Map containing sample information
++            e.g. [ id:'test', single_end:false ]
+           pattern: "chromosome.fasta"
+   - contig_report:
+       - meta:
+@@ -41,10 +44,12 @@
+           description: |
+             Groovy Map containing sample information
+             e.g. [ id:'test', single_end:false ]
+-      - results/contig_report.txt:
+-          type: file
+-          description: Assignment of the contig to chromosome or a particular plasmid
+-            grouping
++          pattern: "contig_report.txt"
++      - mobsuite/contig_report.txt:
++          type: map
++          description: |
++            Groovy Map containing sample information
++            e.g. [ id:'test', single_end:false ]
+           pattern: "contig_report.txt"
+   - plasmids:
+       - meta:
+@@ -52,9 +57,12 @@
+           description: |
+             Groovy Map containing sample information
+             e.g. [ id:'test', single_end:false ]
+-      - results/plasmid_*.fasta:
+-          type: file
+-          description: Each plasmid group is written to an individual FASTA
++          pattern: "plasmid_*.fasta"
++      - mobsuite/plasmid_*.fasta:
++          type: map
++          description: |
++            Groovy Map containing sample information
++            e.g. [ id:'test', single_end:false ]
+           pattern: "plasmid_*.fasta"
+   - mobtyper_results:
+       - meta:
+@@ -62,9 +70,12 @@
+           description: |
+             Groovy Map containing sample information
+             e.g. [ id:'test', single_end:false ]
+-      - results/mobtyper_results.txt:
+-          type: file
+-          description: Aggregate MOB-typer report files for all identified plasmid
++          pattern: "mobtyper_results.txt"
++      - mobsuite/mobtyper_results.txt:
++          type: map
++          description: |
++            Groovy Map containing sample information
++            e.g. [ id:'test', single_end:false ]
+           pattern: "mobtyper_results.txt"
+   - versions:
+       - versions.yml:
+
 'modules/nf-core/mobsuite/recon/environment.yml' is unchanged
 Changes in 'mobsuite/recon/main.nf':
 --- modules/nf-core/mobsuite/recon/main.nf
