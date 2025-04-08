@@ -1,28 +1,35 @@
-process INTEGRON_FINDER {
+process INTEGRONFINDER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://quay.io/repository/biocontainers/integron_finder:2.0.5--pyhdfd78af_0':
+        'https://depot.galaxyproject.org/singularity/integron_finder:2.0.5--pyhdfd78af_0':
         'biocontainers/integron_finder:2.0.5--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${meta.id}"), emit: outdir
-    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons, optional: true
-    // tuple val(meta), path("${meta.id}/*.gbk"), emit: gbk, optional: true
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons
+    tuple val(meta), path("${meta.id}/${meta.id}.summary")  , emit: summary
+    tuple val(meta), path("${meta.id}/integron_finder.out") , emit: log         , optional: true
+    tuple val(meta), path("${meta.id}/*.gbk")               , emit: gbk         , optional: true
+    tuple val(meta), path("${meta.id}/*.pdf")               , emit: pdf         , optional: true
+    path "versions.yml"                                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix = "${meta.id}"
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    integron_finder $fasta --cpu ${task.cpus} --outdir ${prefix} --func-annot
+    integron_finder \\
+                $fasta \\
+                $args \\
+                --cpu $task.cpus \\
+                --outdir ${prefix}
     mv ${prefix}/Results_Integron_Finder_${prefix}/* ${prefix}/
     rmdir ${prefix}/Results_Integron_Finder_${prefix}/
 
@@ -33,8 +40,12 @@ process INTEGRON_FINDER {
     """
 
     stub:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir -p ${prefix}
+    touch ${prefix}/${prefix}.integrons
+    touch ${prefix}/${prefix}.summary"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

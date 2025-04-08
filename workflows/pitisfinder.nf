@@ -12,7 +12,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_piti
 include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
 include { COPLA_COPLADBDOWNLOAD } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA } from '../modules/local/copla/copla/main'
-include { INTEGRON_FINDER } from '../modules/local/integronfinder/main'
+include { INTEGRONFINDER } from '../modules/local/integronfinder/main'
 include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
 include { IS_BLAST } from '../modules/local/isblast/main'
 include { IS_PARSER } from '../modules/local/isparser/main'
@@ -31,7 +31,7 @@ process ECHO {
 
     output:
     stdout
-        
+
     script:
     """
     echo $meta $fasta
@@ -95,7 +95,7 @@ workflow PITISFINDER {
             .set{ ch_plasmids }
         // COPLA
         ch_copladb = Channel.empty()
-        if (!params.copla_db){ 
+        if (!params.copla_db){
             COPLA_COPLADBDOWNLOAD ()
             ch_copladb = COPLA_COPLADBDOWNLOAD.out.db
         } else {
@@ -109,10 +109,10 @@ workflow PITISFINDER {
         //
         // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
         //
-        // Integron_finder
-        INTEGRON_FINDER (ch_fasta)
-        ch_versions = ch_versions.mix( INTEGRON_FINDER.out.versions )
-        ch_integron_raw = INTEGRON_FINDER.out.integrons
+        // INTEGRONFINDER
+        INTEGRONFINDER (ch_fasta)
+        ch_versions = ch_versions.mix( INTEGRONFINDER.out.versions )
+        ch_integron_raw = INTEGRONFINDER.out.integrons
         // Process results
         ch_merged = ch_samplesheet
             .join(ch_integron_raw)
@@ -130,7 +130,7 @@ workflow PITISFINDER {
             ch_is_input = ch_fasta
         }
         ch_isdb = Channel.empty()
-        if (params.is_db){ 
+        if (params.is_db){
             ch_isdb = Channel.value(params.is_db)
             // BLASTn search
             IS_BLAST (ch_is_input, ch_isdb)
@@ -146,7 +146,7 @@ workflow PITISFINDER {
         // PHASTEST
         //
         ch_phastestdb = Channel.empty()
-        if (!params.phastest_db){ 
+        if (!params.phastest_db){
             PHASTEST_PHASTESTDBDOWNLOAD ()
             ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
         } else {
@@ -155,7 +155,7 @@ workflow PITISFINDER {
         PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
         // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
     }
-    
+
 
     //
     // Collate and save software versions
