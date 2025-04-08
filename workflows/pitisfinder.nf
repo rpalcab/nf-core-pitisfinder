@@ -18,6 +18,7 @@ include { IS_BLAST } from '../modules/local/isblast/main'
 include { IS_PARSER } from '../modules/local/isparser/main'
 include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
 include { PHASTEST_PHASTEST } from '../modules/local/phastest/phastest/main'
+include { MACSYFINDER } from '../modules/local/macsyfinder/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,7 +67,7 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // Channel solo con sample y fasta
-    ch_samplesheet.map { meta, fasta, ann, res ->
+    ch_samplesheet.map { meta, fasta, gene_ann, prot_ann, res ->
         return [ meta, fasta ]
     }
     .set { ch_fasta }
@@ -156,6 +157,19 @@ workflow PITISFINDER {
         // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
     }
 
+    if ( !params.skip_ices ) {
+        //
+        // ICEs (ESTO IRÁ A SUBWORKFLOW)
+        //
+        // MACSYFINDER
+        ch_samplesheet.map { meta, fasta, gene_ann, prot_ann, res ->
+            return [ meta, prot_ann ]
+        }
+        .set { ch_macsyfinder }
+        ch_msymodel = Channel.value('CONJScan/Plasmids')
+        MACSYFINDER (ch_macsyfinder, ch_msymodel)
+        ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
+    }
 
     //
     // Collate and save software versions

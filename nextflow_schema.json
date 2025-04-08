@@ -93,6 +93,12 @@
                     "fa_icon": "fas fa-forward",
                     "description": "Skip prophage search.",
                     "default": false
+                },
+                "skip_ices": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip ICEs search.",
+                    "default": false
                 }
             }
         },

@@ -26,6 +26,12 @@
                 "exists": true,
                 "pattern": "^\\S+\\.gff3?$"
             },
+            "protein_ann": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.faa$"
+            },
             "amr_ann": {
                 "type": "string",
                 "format": "file-path",
