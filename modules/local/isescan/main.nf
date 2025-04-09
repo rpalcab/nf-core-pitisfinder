@@ -11,8 +11,12 @@ process ISESCAN {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${meta.id}"), emit: bam
-    path "versions.yml"                , emit: versions
+    tuple val(meta), path("${meta.id}/*.tsv")   , emit: tsv
+    tuple val(meta), path("${meta.id}/*.gff")   , emit: gff
+    tuple val(meta), path("${meta.id}/*.is.fna"), emit: isfna
+    tuple val(meta), path("${meta.id}/*.orf.fna"), emit: orffna
+    tuple val(meta), path("${meta.id}/*.orf.faa"), emit: orffaa
+    path "versions.yml"                          , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
