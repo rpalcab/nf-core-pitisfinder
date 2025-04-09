@@ -1,62 +1,84 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "isescan"
-## TODO nf-core: Add a description of the module and list keywords
-description: write your description here
+description: "A python pipeline to identify IS (Insertion Sequence) elements in genome and metagenome "
 keywords:
-  - sort
-  - example
+  - IS
+  - insertion
+  - bacteria
   - genomics
 tools:
   - "isescan":
-      ## TODO nf-core: Add a description and other details for the software below
       description: "A python pipeline to identify IS (Insertion Sequence) elements in genome and metagenome "
-      homepage: "None"
-      documentation: "None"
-      tool_dev_url: "None"
-      doi: ""
+      homepage: "https://github.com/xiezhq/ISEScan"
+      documentation: "https://github.com/xiezhq/ISEScan"
+      tool_dev_url: "https://github.com/xiezhq/ISEScan"
+      doi: "10.1093/bioinformatics/btx433"
       licence: ['GPL']
       identifier: biotools:isescan
 
-## TODO nf-core: Add a description of all of the variables used as input
 input:
-  # Only when we have meta
   - - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-  
-  ## TODO nf-core: Delete / customise this example input
-    - bam:
+    - fasta:
         type: file
-        description: Sorted BAM/CRAM/SAM file
-        pattern: "*.{bam,cram,sam}"
-        ontologies:
-          - edam: "http://edamontology.org/format_25722"
-          - edam: "http://edamontology.org/format_2573"
-          - edam: "http://edamontology.org/format_3462"
-          
+        description: Assembly FASTA file of a bacterial genome.
+        pattern: "*.{fasta,fa,fna}"
 
-## TODO nf-core: Add a description of all of the variables used as output
 output:
-  - bam:
-  #Only when we have meta
+  - tsv:
     - meta:
         type: map
         description: |
           Groovy Map containing sample information
           e.g. `[ id:'sample1', single_end:false ]`
-  ## TODO nf-core: Delete / customise this example output
-    - "*.bam":
+    - "*.tsv":
         type: file
-        description: Sorted BAM/CRAM/SAM file
-        pattern: "*.{bam,cram,sam}"
-        ontologies:
-          - edam: "http://edamontology.org/format_25722"
-          - edam: "http://edamontology.org/format_2573"
-          - edam: "http://edamontology.org/format_3462"
-          
+        description: Details about IS copies in the sample, one copy per line, tab-separated tabular table
+        pattern: "*.tsv"
+  - gff:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.gff":
+        type: file
+        description: Each IS copy and its TIR, gff3 format.
+        pattern: "*.gff"
+  - isfna:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.is.fna":
+        type: file
+        description: The nucleic acid sequence of each IS copy, fasta format.
+        pattern: "*.is.fna"
+  - orffna:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.orf.fna":
+        type: file
+        description: The nucleic acid sequence of the Tpase gene in each IS copy, fasta format.
+        pattern: "*.orf.fna"
+  - orffaa:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.orf.faa":
+        type: file
+        description: The amino acid sequence of the Tpase in each IS copy, fasta format.
+        pattern: "*.orf.faa"
   - versions:
     - "versions.yml":
         type: file
