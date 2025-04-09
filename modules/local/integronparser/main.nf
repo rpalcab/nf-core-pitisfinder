@@ -7,7 +7,7 @@ process INTEGRON_PARSER {
         'docker://rpalcab/pitis_parser:1.0':
         'docker.io/rpalcab/pitis_parser:1.0' }"
     input:
-    tuple val(meta), path(fasta), path(gene_ann), path(prot_ann), path(res), path(integrons)
+    tuple val(meta), path(fasta), path(gff), path(amr), path(integrons)
 
     output:
     tuple val(meta), path("integrons_summary.tsv"), emit: report, optional: true
@@ -18,7 +18,7 @@ process INTEGRON_PARSER {
     script:
     def prefix = "${meta.id}"
     """
-    integron_parser.py -i $integrons -f $fasta -a $gene_ann -r $res -s ${meta.id} -o .
+    integron_parser.py -i $integrons -f $fasta -a $gff -r $amr -s ${meta.id} -o .
     """
 
     stub:

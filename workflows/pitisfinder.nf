@@ -17,6 +17,7 @@ include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
 include { IS_BLAST } from '../modules/local/isblast/main'
 include { IS_PARSER } from '../modules/local/isparser/main'
 include { ISESCAN } from '../modules/local/isescan/main'
+include { PHISPY } from '../modules/nf-core/phispy/main'
 include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
 include { PHASTEST_PHASTEST } from '../modules/local/phastest/phastest/main'
 include { MACSYFINDER } from '../modules/local/macsyfinder/macsyfinder/main'
@@ -69,7 +70,7 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // Channel solo con sample y fasta
-    ch_samplesheet.map { meta, fasta, gene_ann, prot_ann, res ->
+    ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
         return [ meta, fasta ]
     }
     .set { ch_fasta }
@@ -117,8 +118,10 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix( INTEGRONFINDER.out.versions )
         ch_integron_raw = INTEGRONFINDER.out.integrons
         // Process results
-        ch_merged = ch_samplesheet
-            .join(ch_integron_raw)
+        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+            return [ meta, fasta, gff, amr ]
+            }.join(ch_integron_raw)
+            .set { ch_merged }
         INTEGRON_PARSER (ch_merged)
     }
 
@@ -148,16 +151,23 @@ workflow PITISFINDER {
 
     if ( !params.skip_prophages ) {
         //
+        // PHIPSY
+        //
+        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+            return [ meta, gbk ]
+            }.set { ch_phispy }
+        PHISPY (ch_phispy)
+        //
         // PHASTEST
         //
-        ch_phastestdb = Channel.empty()
-        if (!params.phastest_db){
-            PHASTEST_PHASTESTDBDOWNLOAD ()
-            ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
-        } else {
-            ch_phastestdb = Channel.value(params.phastest_db)
-        }
-        PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
+        // ch_phastestdb = Channel.empty()
+        // if (!params.phastest_db){
+        //     PHASTEST_PHASTESTDBDOWNLOAD ()
+        //     ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
+        // } else {
+        //     ch_phastestdb = Channel.value(params.phastest_db)
+        // }
+        // PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
         // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
     }
 
@@ -166,8 +176,8 @@ workflow PITISFINDER {
         // ICEs (ESTO IRÁ A SUBWORKFLOW)
         //
         // MACSYFINDER
-        ch_samplesheet.map { meta, fasta, gene_ann, prot_ann, res ->
-            return [ meta, prot_ann ]
+        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+            return [ meta, faa ]
         }
         .set { ch_macsyfinder }
         ch_msymodel = Channel.value(['CONJScan','CONJScan/Plasmids'])

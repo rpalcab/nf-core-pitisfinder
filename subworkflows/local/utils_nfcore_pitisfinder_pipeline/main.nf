@@ -160,7 +160,7 @@ def validateInputParameters() {
 // Validate channels from input samplesheet
 //
 def validateInputSamplesheet(input) {
-    def (metas, fasta, gene_ann, prot_ann, amr_ann) = input[0..4]
+    def (metas, fasta, gff, faa, gbk, amr) = input[0..5]
 
     // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
     // def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
@@ -168,7 +168,7 @@ def validateInputSamplesheet(input) {
     //     error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
     // }
 
-    return [ metas, fasta, gene_ann, prot_ann, amr_ann ]
+    return [ metas, fasta, gff, faa, gbk, amr ]
 }
 //
 // Get attribute from genome config file e.g. fasta

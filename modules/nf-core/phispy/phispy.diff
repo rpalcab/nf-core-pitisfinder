@@ -1,0 +1,56 @@
+Changes in component 'nf-core/phispy'
+'modules/nf-core/phispy/meta.yml' is unchanged
+'modules/nf-core/phispy/environment.yml' is unchanged
+Changes in 'phispy/main.nf':
+--- modules/nf-core/phispy/main.nf
++++ modules/nf-core/phispy/main.nf
+@@ -11,17 +11,17 @@
+     tuple val(meta), path(gbk)
+ 
+     output:
+-    tuple val(meta), path("${prefix}.tsv")                     , emit: coordinates
+-    tuple val(meta), path("${prefix}.gb*")                     , emit: gbk
+-    tuple val(meta), path("${prefix}.log")                     , emit: log
+-    tuple val(meta), path("${prefix}_prophage_information.tsv"), optional:true, emit: information
+-    tuple val(meta), path("${prefix}_bacteria.fasta")          , optional:true, emit: bacteria_fasta
+-    tuple val(meta), path("${prefix}_bacteria.gbk")            , optional:true, emit: bacteria_gbk
+-    tuple val(meta), path("${prefix}_phage.fasta")             , optional:true, emit: phage_fasta
+-    tuple val(meta), path("${prefix}_phage.gbk")               , optional:true, emit: phage_gbk
+-    tuple val(meta), path("${prefix}_prophage.gff3")           , optional:true, emit: prophage_gff
+-    tuple val(meta), path("${prefix}_prophage.tbl")            , optional:true, emit: prophage_tbl
+-    tuple val(meta), path("${prefix}_prophage.tsv")            , optional:true, emit: prophage_tsv
++    tuple val(meta), path("${prefix}/${prefix}.tsv")                     , emit: coordinates
++    tuple val(meta), path("${prefix}/${prefix}.gb*")                     , emit: gbk
++    tuple val(meta), path("${prefix}/${prefix}.log")                     , emit: log
++    tuple val(meta), path("${prefix}/${prefix}_prophage_information.tsv"), optional:true, emit: information
++    tuple val(meta), path("${prefix}/${prefix}_bacteria.fasta")          , optional:true, emit: bacteria_fasta
++    tuple val(meta), path("${prefix}/${prefix}_bacteria.gbk")            , optional:true, emit: bacteria_gbk
++    tuple val(meta), path("${prefix}/${prefix}_phage.fasta")             , optional:true, emit: phage_fasta
++    tuple val(meta), path("${prefix}/${prefix}_phage.gbk")               , optional:true, emit: phage_gbk
++    tuple val(meta), path("${prefix}/${prefix}_prophage.gff3")           , optional:true, emit: prophage_gff
++    tuple val(meta), path("${prefix}/${prefix}_prophage.tbl")            , optional:true, emit: prophage_tbl
++    tuple val(meta), path("${prefix}/${prefix}_prophage.tsv")            , optional:true, emit: prophage_tsv
+     path "versions.yml"                                        , emit: versions
+ 
+     when:
+@@ -33,14 +33,14 @@
+     // Extract GBK file extension, i.e. .gbff, .gbk.gz
+     gbk_extension = gbk.getName() - gbk.getSimpleName()
+ 
+-    if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
++    // if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
+ 
+     """
+     PhiSpy.py \\
+         $args \\
+         --threads $task.cpus \\
+         -p $prefix \\
+-        -o . \\
++        -o $prefix \\
+         $gbk
+ 
+     mv ${prefix}_prophage_coordinates.tsv ${prefix}.tsv
+
+'modules/nf-core/phispy/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/phispy/tests/main.nf.test' is unchanged
+************************************************************
