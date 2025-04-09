@@ -16,9 +16,11 @@ include { INTEGRONFINDER } from '../modules/local/integronfinder/main'
 include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
 include { IS_BLAST } from '../modules/local/isblast/main'
 include { IS_PARSER } from '../modules/local/isparser/main'
+include { ISESCAN } from '../modules/local/isescan/main'
 include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
 include { PHASTEST_PHASTEST } from '../modules/local/phastest/phastest/main'
-include { MACSYFINDER } from '../modules/local/macsyfinder/main'
+include { MACSYFINDER } from '../modules/local/macsyfinder/macsyfinder/main'
+include { VERIFYMODEL } from '../modules/local/macsyfinder/verifymodel/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,6 +142,8 @@ workflow PITISFINDER {
             ch_raw_is = IS_BLAST.out.report
             IS_PARSER (ch_raw_is)
         }
+        ISESCAN (ch_is_input)
+        ch_versions = ch_versions.mix( ISESCAN.out.versions )
     }
 
     if ( !params.skip_prophages ) {
@@ -166,8 +170,10 @@ workflow PITISFINDER {
             return [ meta, prot_ann ]
         }
         .set { ch_macsyfinder }
-        ch_msymodel = Channel.value('CONJScan/Plasmids')
-        MACSYFINDER (ch_macsyfinder, ch_msymodel)
+        ch_msymodel = Channel.value(['CONJScan','CONJScan/Plasmids'])
+        VERIFYMODEL (ch_msymodel)
+        ch_model = VERIFYMODEL.out.model
+        MACSYFINDER (ch_macsyfinder, ch_model)
         ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
     }
 
