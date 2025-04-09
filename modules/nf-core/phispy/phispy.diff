@@ -33,7 +33,7 @@ Changes in 'phispy/main.nf':
      path "versions.yml"                                        , emit: versions
  
      when:
-@@ -33,14 +33,14 @@
+@@ -33,19 +33,19 @@
      // Extract GBK file extension, i.e. .gbff, .gbk.gz
      gbk_extension = gbk.getName() - gbk.getSimpleName()
  
@@ -49,7 +49,45 @@ Changes in 'phispy/main.nf':
 +        -o $prefix \\
          $gbk
  
-     mv ${prefix}_prophage_coordinates.tsv ${prefix}.tsv
+-    mv ${prefix}_prophage_coordinates.tsv ${prefix}.tsv
+-    mv ${prefix}_${gbk} ${prefix}${gbk_extension}
+-    mv ${prefix}_phispy.log ${prefix}.log
++    mv ${prefix}/${prefix}_prophage_coordinates.tsv ${prefix}/${prefix}.tsv
++    mv ${prefix}/${prefix}_${gbk} ${prefix}/${prefix}${gbk_extension}
++    mv ${prefix}/${prefix}_phispy.log ${prefix}/${prefix}.log
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+@@ -60,17 +60,18 @@
+     if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
+ 
+     """
+-    touch ${prefix}.tsv
+-    touch ${prefix}${gbk_extension}
+-    touch ${prefix}.log
+-    touch ${prefix}_prophage_information.tsv
+-    touch ${prefix}_bacteria.fasta
+-    touch ${prefix}_bacteria.gbk
+-    touch ${prefix}_phage.fasta
+-    touch ${prefix}_phage.gbk
+-    touch ${prefix}_prophage.gff3
+-    touch ${prefix}_prophage.tbl
+-    touch ${prefix}_prophage.tsv
++    mkdir ${prefix}/
++    touch ${prefix}/${prefix}.tsv
++    touch ${prefix}/${prefix}${gbk_extension}
++    touch ${prefix}/${prefix}.log
++    touch ${prefix}/${prefix}_prophage_information.tsv
++    touch ${prefix}/${prefix}_bacteria.fasta
++    touch ${prefix}/${prefix}_bacteria.gbk
++    touch ${prefix}/${prefix}_phage.fasta
++    touch ${prefix}/${prefix}_phage.gbk
++    touch ${prefix}/${prefix}_prophage.gff3
++    touch ${prefix}/${prefix}_prophage.tbl
++    touch ${prefix}/${prefix}_prophage.tsv
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
 
 'modules/nf-core/phispy/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/phispy/tests/main.nf.test' is unchanged
