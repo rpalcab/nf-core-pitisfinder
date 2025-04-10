@@ -180,7 +180,7 @@ workflow PITISFINDER {
             return [ meta, faa ]
         }
         .set { ch_macsyfinder }
-        ch_msymodel = Channel.value(['CONJScan','CONJScan/Plasmids'])
+        ch_msymodel = Channel.value(['CONJScan/Plasmids'])
         VERIFYMODEL (ch_msymodel)
         ch_model = VERIFYMODEL.out.model
         MACSYFINDER (ch_macsyfinder, ch_model)
