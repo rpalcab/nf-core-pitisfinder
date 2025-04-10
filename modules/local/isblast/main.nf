@@ -1,6 +1,6 @@
 process IS_BLAST {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -39,7 +39,7 @@ process IS_BLAST {
     """
     mkdir -p ${prefix}
     touch ${prefix}/IS_chr_raw.tsv
-    
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         blastn: \$(blastn -version | head -n1 | cut -f2 -d' ')

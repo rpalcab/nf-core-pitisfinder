@@ -31,47 +31,43 @@ output:
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "chromosome.fasta"
-      - mobsuite/chromosome.fasta:
+      - "*/chromosome.fasta":
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "chromosome.fasta"
+          pattern: "*/chromosome.fasta"
   - contig_report:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "contig_report.txt"
-      - mobsuite/contig_report.txt:
+      - "*/contig_report.txt":
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "contig_report.txt"
+          pattern: "*/contig_report.txt"
   - plasmids:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "plasmid_*.fasta"
-      - mobsuite/plasmid_*.fasta:
+      - "*/plasmid_*.fasta":
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "plasmid_*.fasta"
+          pattern: "*/plasmid_*.fasta"
   - mobtyper_results:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-          pattern: "mobtyper_results.txt"
-      - mobsuite/mobtyper_results.txt:
+      - "*/mobtyper_results.txt":
           type: map
           description: |
             Groovy Map containing sample information

@@ -1,6 +1,6 @@
 process VERIFYMODEL {
     tag "verifymodel"
-    label 'process_low'
+    label 'process_single'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -20,6 +20,7 @@ process VERIFYMODEL {
     script:
     def dwnl_model = model.contains("/") ? model.tokenize("/")[0] : model
     """
+    echo ${dwnl_model}
     macsydata install ${dwnl_model} -t models/
 
     cat <<-END_VERSIONS > versions.yml

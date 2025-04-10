@@ -47,6 +47,9 @@ process PHISPY {
     mv ${prefix}/${prefix}_${gbk} ${prefix}/${prefix}${gbk_extension}
     mv ${prefix}/${prefix}_phispy.log ${prefix}/${prefix}.log
 
+    # Adds header to tsv file
+    sed -i '1s/^/Prophage_number\\tContig\\tStart_phage\\tEnd_phage\\tStart_attl\\tEnd_attl\\tStart_attr\\tEnd_attr\\tSeq_attl\\tSeq_attr\\tComment\\n/' ${prefix}/${prefix}.tsv
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         PhiSpy: \$(echo \$(PhiSpy.py --version 2>&1))

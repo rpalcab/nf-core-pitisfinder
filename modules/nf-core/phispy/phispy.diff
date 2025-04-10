@@ -33,7 +33,7 @@ Changes in 'phispy/main.nf':
      path "versions.yml"                                        , emit: versions
  
      when:
-@@ -33,19 +33,19 @@
+@@ -33,19 +33,22 @@
      // Extract GBK file extension, i.e. .gbff, .gbk.gz
      gbk_extension = gbk.getName() - gbk.getSimpleName()
  
@@ -55,10 +55,13 @@ Changes in 'phispy/main.nf':
 +    mv ${prefix}/${prefix}_prophage_coordinates.tsv ${prefix}/${prefix}.tsv
 +    mv ${prefix}/${prefix}_${gbk} ${prefix}/${prefix}${gbk_extension}
 +    mv ${prefix}/${prefix}_phispy.log ${prefix}/${prefix}.log
++
++    # Adds header to tsv file
++    sed -i '1s/^/Prophage_number\\tContig\\tStart_phage\\tEnd_phage\\tStart_attl\\tEnd_attl\\tStart_attr\\tEnd_attr\\tSeq_attl\\tSeq_attr\\tComment\\n/' ${prefix}/${prefix}.tsv
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
-@@ -60,17 +60,18 @@
+@@ -60,17 +63,18 @@
      if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
  
      """

@@ -1,2 +1,5 @@
-sample,fasta,gene_ann,amr_ann
-sample,/path/to/fastq/files/sample.fasta,/path/to/fastq/files/sample.gff3,/path/to/fastq/files/sample.tab
+sample,fasta,gff,faa,gbk,amr
+Ecol_VC_751-2,/media/usuario/datos2/nf-core-pitisfinder/data/Ecol_VC_751-2.fasta,/media/usuario/datos2/nf-core-pitisfinder/data/Ecol_VC_751-2.gff3,/media/usuario/datos2/nf-core-pitisfinder/data/Ecol_VC_751-2.faa,/media/usuario/datos2/nf-core-pitisfinder/data/Ecol_VC_751-2.gbff,/media/usuario/datos2/nf-core-pitisfinder/data/Ecol_VC_751-2.tab
+Kpne_VC_55607,/media/usuario/datos2/nf-core-pitisfinder/data/Kpne_VC_55607.fasta,/media/usuario/datos2/nf-core-pitisfinder/data/Kpne_VC_55607.gff3,/media/usuario/datos2/nf-core-pitisfinder/data/Kpne_VC_55607.faa,/media/usuario/datos2/nf-core-pitisfinder/data/Kpne_VC_55607.gbff,/media/usuario/datos2/nf-core-pitisfinder/data/Kpne_VC_55607.tab
+Cfre_SG_73454,/media/usuario/datos2/nf-core-pitisfinder/data/Cfre_SG_73454.fasta,/media/usuario/datos2/nf-core-pitisfinder/data/Cfre_SG_73454.gff3,/media/usuario/datos2/nf-core-pitisfinder/data/Cfre_SG_73454.faa,/media/usuario/datos2/nf-core-pitisfinder/data/Cfre_SG_73454.gbff,/media/usuario/datos2/nf-core-pitisfinder/data/Cfre_SG_73454.tab
+Pmir_VR_79318,/media/usuario/datos2/nf-core-pitisfinder/data/Pmir_VR_79318.fasta,/media/usuario/datos2/nf-core-pitisfinder/data/Pmir_VR_79318.gff3,/media/usuario/datos2/nf-core-pitisfinder/data/Pmir_VR_79318.faa,/media/usuario/datos2/nf-core-pitisfinder/data/Pmir_VR_79318.gbff,/media/usuario/datos2/nf-core-pitisfinder/data/Pmir_VR_79318.tab

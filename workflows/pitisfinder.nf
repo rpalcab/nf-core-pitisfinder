@@ -3,44 +3,31 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-// include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-// include { MULTIQC                } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
-include { MOBSUITE_RECON  } from '../modules/nf-core/mobsuite/recon/main'
-include { COPLA_COPLADBDOWNLOAD } from '../modules/local/copla/copladbdownload/main'
-include { COPLA_COPLA } from '../modules/local/copla/copla/main'
-include { INTEGRONFINDER } from '../modules/local/integronfinder/main'
-include { INTEGRON_PARSER } from '../modules/local/integronparser/main'
-include { IS_BLAST } from '../modules/local/isblast/main'
-include { IS_PARSER } from '../modules/local/isparser/main'
-include { ISESCAN } from '../modules/local/isescan/main'
-include { PHISPY } from '../modules/nf-core/phispy/main'
+// include { FASTQC                   } from '../modules/nf-core/fastqc/main'
+// include { MULTIQC                  } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap            } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
+include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
+include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
+include { COPLA_COPLA                 } from '../modules/local/copla/copla/main'
+include { INTEGRONFINDER              } from '../modules/local/integronfinder/main'
+include { INTEGRON_PARSER             } from '../modules/local/integronparser/main'
+include { IS_BLAST                    } from '../modules/local/isblast/main'
+include { IS_PARSER                   } from '../modules/local/isparser/main'
+include { ISESCAN                     } from '../modules/local/isescan/main'
+include { PHISPY                      } from '../modules/nf-core/phispy/main'
 include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
-include { PHASTEST_PHASTEST } from '../modules/local/phastest/phastest/main'
-include { MACSYFINDER } from '../modules/local/macsyfinder/macsyfinder/main'
-include { VERIFYMODEL } from '../modules/local/macsyfinder/verifymodel/main'
+include { PHASTEST_PHASTEST           } from '../modules/local/phastest/phastest/main'
+include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsyfinder/main'
+include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verifymodel/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-process ECHO {
-    input:
-    tuple val(meta), path(fasta)
-
-    output:
-    stdout
-
-    script:
-    """
-    echo $meta $fasta
-    """
-}
 
 process RENAME_PLASMIDS {
     tag "$meta.id"
@@ -180,7 +167,7 @@ workflow PITISFINDER {
             return [ meta, faa ]
         }
         .set { ch_macsyfinder }
-        ch_msymodel = Channel.value(['CONJScan/Plasmids'])
+        ch_msymodel = Channel.value('CONJScan/Plasmids')
         VERIFYMODEL (ch_msymodel)
         ch_model = VERIFYMODEL.out.model
         MACSYFINDER (ch_macsyfinder, ch_model)

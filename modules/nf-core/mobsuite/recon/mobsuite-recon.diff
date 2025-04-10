@@ -2,23 +2,23 @@ Changes in component 'nf-core/mobsuite/recon'
 Changes in 'mobsuite/recon/meta.yml':
 --- modules/nf-core/mobsuite/recon/meta.yml
 +++ modules/nf-core/mobsuite/recon/meta.yml
-@@ -31,9 +31,12 @@
+@@ -31,40 +31,47 @@
            description: |
              Groovy Map containing sample information
              e.g. [ id:'test', single_end:false ]
 -      - results/chromosome.fasta:
 -          type: file
 -          description: FASTA file of all contigs found to belong to the chromosome
-+          pattern: "chromosome.fasta"
-+      - mobsuite/chromosome.fasta:
+-          pattern: "chromosome.fasta"
++      - "*/chromosome.fasta":
 +          type: map
 +          description: |
 +            Groovy Map containing sample information
 +            e.g. [ id:'test', single_end:false ]
-           pattern: "chromosome.fasta"
++          pattern: "*/chromosome.fasta"
    - contig_report:
        - meta:
-@@ -41,10 +44,12 @@
+           type: map
            description: |
              Groovy Map containing sample information
              e.g. [ id:'test', single_end:false ]
@@ -26,40 +26,39 @@ Changes in 'mobsuite/recon/meta.yml':
 -          type: file
 -          description: Assignment of the contig to chromosome or a particular plasmid
 -            grouping
-+          pattern: "contig_report.txt"
-+      - mobsuite/contig_report.txt:
+-          pattern: "contig_report.txt"
++      - "*/contig_report.txt":
 +          type: map
 +          description: |
 +            Groovy Map containing sample information
 +            e.g. [ id:'test', single_end:false ]
-           pattern: "contig_report.txt"
++          pattern: "*/contig_report.txt"
    - plasmids:
        - meta:
-@@ -52,9 +57,12 @@
+           type: map
            description: |
              Groovy Map containing sample information
              e.g. [ id:'test', single_end:false ]
 -      - results/plasmid_*.fasta:
 -          type: file
 -          description: Each plasmid group is written to an individual FASTA
-+          pattern: "plasmid_*.fasta"
-+      - mobsuite/plasmid_*.fasta:
+-          pattern: "plasmid_*.fasta"
++      - "*/plasmid_*.fasta":
 +          type: map
 +          description: |
 +            Groovy Map containing sample information
 +            e.g. [ id:'test', single_end:false ]
-           pattern: "plasmid_*.fasta"
++          pattern: "*/plasmid_*.fasta"
    - mobtyper_results:
        - meta:
-@@ -62,9 +70,12 @@
+           type: map
            description: |
              Groovy Map containing sample information
              e.g. [ id:'test', single_end:false ]
 -      - results/mobtyper_results.txt:
 -          type: file
 -          description: Aggregate MOB-typer report files for all identified plasmid
-+          pattern: "mobtyper_results.txt"
-+      - mobsuite/mobtyper_results.txt:
++      - "*/mobtyper_results.txt":
 +          type: map
 +          description: |
 +            Groovy Map containing sample information
@@ -80,10 +79,10 @@ Changes in 'mobsuite/recon/main.nf':
 -    tuple val(meta), path("results/contig_report.txt")   , emit: contig_report
 -    tuple val(meta), path("results/plasmid_*.fasta")     , emit: plasmids        , optional: true
 -    tuple val(meta), path("results/mobtyper_results.txt"), emit: mobtyper_results, optional: true
-+    tuple val(meta), path("mobsuite/chromosome.fasta")    , emit: chromosome
-+    tuple val(meta), path("mobsuite/contig_report.txt")   , emit: contig_report
-+    tuple val(meta), path("mobsuite/plasmid_*.fasta")     , emit: plasmids        , optional: true
-+    tuple val(meta), path("mobsuite/mobtyper_results.txt"), emit: mobtyper_results, optional: true
++    tuple val(meta), path("${meta.id}/chromosome.fasta")    , emit: chromosome
++    tuple val(meta), path("${meta.id}/contig_report.txt")   , emit: contig_report
++    tuple val(meta), path("${meta.id}/plasmid_*.fasta")     , emit: plasmids        , optional: true
++    tuple val(meta), path("${meta.id}/mobtyper_results.txt"), emit: mobtyper_results, optional: true
      path "versions.yml"                                  , emit: versions
  
      when:
@@ -92,7 +91,7 @@ Changes in 'mobsuite/recon/main.nf':
          $args \\
          --num_threads $task.cpus \\
 -        --outdir results \\
-+        --outdir mobsuite \\
++        --outdir ${meta.id} \\
          --sample_id $prefix
  
      cat <<-END_VERSIONS > versions.yml
@@ -101,12 +100,12 @@ Changes in 'mobsuite/recon/main.nf':
      stub:
      """
 -    mkdir -p results
-+    mkdir -p mobsuite
++    mkdir -p ${meta.id}
  
 -    touch results/chromosome.fasta
 -    touch results/contig_report.txt
-+    touch mobsuite/chromosome.fasta
-+    touch mobsuite/contig_report.txt
++    touch ${meta.id}/chromosome.fasta
++    touch ${meta.id}/contig_report.txt
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
