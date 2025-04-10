@@ -18,6 +18,8 @@ include { IS_BLAST                    } from '../modules/local/isblast/main'
 include { IS_PARSER                   } from '../modules/local/isparser/main'
 include { ISESCAN                     } from '../modules/local/isescan/main'
 include { PHISPY                      } from '../modules/nf-core/phispy/main'
+include { PHIGARO_SETUP               } from '../modules/local/phigaro/phigaro_setup'
+include { PHIGARO                     } from '../modules/local/phigaro/phigaro'
 include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
 include { PHASTEST_PHASTEST           } from '../modules/local/phastest/phastest/main'
 include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsyfinder/main'
@@ -144,6 +146,22 @@ workflow PITISFINDER {
             return [ meta, gbk ]
             }.set { ch_phispy }
         PHISPY (ch_phispy)
+
+        //
+        // PHIGARO
+        //
+        ch_phigaro_setup = params.phigaro_db ? Channel.fromPath(params.phigaro_db).map{ it -> [it] } : Channel.of([])
+        PHIGARO_SETUP(ch_phigaro_setup)
+        // Create value channels for db and config
+        ch_db = PHIGARO_SETUP.out.pvog.first()
+        ch_config = PHIGARO_SETUP.out.config.first()
+
+        PHIGARO(
+            ch_fasta,
+            ch_db,
+            ch_config
+        )
+
         //
         // PHASTEST
         //
