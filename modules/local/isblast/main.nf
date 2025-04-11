@@ -4,8 +4,9 @@ process IS_BLAST {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/ncbi/blast:2.16.0':
-        'docker.io/ncbi/blast:2.16.0' }"
+        'https://depot.galaxyproject.org/singularity/blast:2.16.0--h66d330f_4':
+        'biocontainers/blast:2.16.0--h66d330f_4' }"
+
     input:
     tuple val(meta), path(fasta)
     path (isdb)

@@ -24,6 +24,8 @@ include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastest
 include { PHASTEST_PHASTEST           } from '../modules/local/phastest/phastest/main'
 include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsyfinder/main'
 include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verifymodel/main'
+include { ICEBERG_DB_DOWNLOAD         } from '../modules/local/iceberg/dbdownload/main'
+include { ICEBERG_ICESEARCH           } from '../modules/local/iceberg/icesearch/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -190,8 +192,15 @@ workflow PITISFINDER {
         ch_model = VERIFYMODEL.out.model
         MACSYFINDER (ch_macsyfinder, ch_model)
         ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
+        //
+        // ICEBERG
+        //
+        // Create a channel with the ICEberg database path or 'null' if not provided
+        ch_iceberg_db = params.iceberg_db ? Channel.value(params.iceberg_db) : Channel.value('null')
+        // Run the ICEBERG_DB_DOWNLOAD process
+        ICEBERG_DB_DOWNLOAD(ch_iceberg_db)
+        ICEBERG_ICESEARCH(ch_mobsuite_chr, ICEBERG_DB_DOWNLOAD.out.db)
     }
-
     //
     // Collate and save software versions
     //
