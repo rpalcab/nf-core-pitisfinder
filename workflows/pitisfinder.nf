@@ -26,6 +26,7 @@ include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsy
 include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verifymodel/main'
 include { ICEBERG_DB_DOWNLOAD         } from '../modules/local/iceberg/dbdownload/main'
 include { ICEBERG_ICESEARCH           } from '../modules/local/iceberg/icesearch/main'
+include { ICEBERG_FILTER              } from '../modules/local/iceberg/icefilter/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -148,6 +149,7 @@ workflow PITISFINDER {
             return [ meta, gbk ]
             }.set { ch_phispy }
         PHISPY (ch_phispy)
+        ch_versions = ch_versions.mix( PHISPY.out.versions )
 
         //
         // PHIGARO
@@ -163,6 +165,7 @@ workflow PITISFINDER {
             ch_db,
             ch_config
         )
+        ch_versions = ch_versions.mix( PHIGARO.out.versions )
 
         //
         // PHASTEST
@@ -205,6 +208,8 @@ workflow PITISFINDER {
             ch_iceberg_db = Channel.value(params.iceberg_db)
         }
         ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
+        ch_versions = ch_versions.mix( ICEBERG_ICESEARCH.out.versions )
+        ICEBERG_FILTER(ICEBERG_ICESEARCH.out.tsv)
     }
     //
     // Collate and save software versions

@@ -12,7 +12,7 @@ process ICEBERG_ICESEARCH {
     path(db)
 
     output:
-    tuple val(meta), path("${meta.id}/blast.tsv"), emit: tsv
+    tuple val(meta), path("${meta.id}/ices.tsv") , emit: tsv
     path "versions.yml"                          , emit: versions
 
     when:
@@ -28,8 +28,11 @@ process ICEBERG_ICESEARCH {
     blastn -db $fasta -query $db \\
         -outfmt "6 qseqid sseqid qstart qend qlen sstart send slen pident qcovhsp length mismatch score evalue" \\
         -evalue 5E-10 -perc_identity 80 -qcov_hsp_perc 60 \\
-        -out ${prefix}/blast.tsv
-    sed -i '1s/^/qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n/' ${prefix}/blast.tsv
+        -out ${prefix}/ices.tsv
+
+    printf "qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n" > tmp
+    cat ${prefix}/ices.tsv >> tmp
+    mv tmp ${prefix}/ices.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -42,7 +45,7 @@ process ICEBERG_ICESEARCH {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     mkdir ${prefix}
-    touch ${prefix}/blast.tsv
+    printf "qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n" > ${prefix}/ices.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
