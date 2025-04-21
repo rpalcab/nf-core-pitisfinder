@@ -154,6 +154,16 @@ workflow PIPELINE_COMPLETION {
 //
 def validateInputParameters() {
     genomeExistsError()
+
+    if ( !params.skip_ices && params.skip_plasmids) {
+        // Plasmid detection is mandatory
+        def error_string = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "  Plasmid detection is required before ICE detection.\n" +
+            "  Please either skip ICE search or allow plasmid search.\n"
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+            error(error_string)
+        }
+
 }
 
 //
