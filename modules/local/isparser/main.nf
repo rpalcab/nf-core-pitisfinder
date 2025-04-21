@@ -19,7 +19,7 @@ process IS_PARSER {
     def prefix = "${meta.id}"
     """
     mkdir ${prefix}
-    IS_parser.py -i $report_raw -o ${prefix}
+    blastn_overlap_solver.py -i $report_raw -o ${prefix}
     """
 
     stub:

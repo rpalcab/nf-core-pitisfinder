@@ -12,7 +12,7 @@ process IS_BLAST {
     path (isdb)
 
     output:
-    tuple val(meta), path("${meta.id}/IS_chr_raw.tsv"), emit: report
+    tuple val(meta), path("${meta.id}/IS_chr.tsv"), emit: report
     path "versions.yml", emit: versions
 
     when:
@@ -27,8 +27,8 @@ process IS_BLAST {
     blastn -db $fasta -query $isdb \\
         -outfmt "6 qseqid sseqid qstart qend qlen sstart send slen pident qcovhsp length mismatch score evalue" \\
         -evalue 5E-10 -perc_identity 90 -qcov_hsp_perc 90 \\
-        -out ${prefix}/IS_chr_raw.tsv
-    sed -i '1s/^/qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n/' ${prefix}/IS_chr_raw.tsv
+        -out ${prefix}/IS_chr.tsv
+    sed -i '1s/^/qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n/' ${prefix}/IS_chr.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -39,7 +39,7 @@ process IS_BLAST {
     stub:
     """
     mkdir -p ${prefix}
-    touch ${prefix}/IS_chr_raw.tsv
+    touch ${prefix}/IS_chr.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
