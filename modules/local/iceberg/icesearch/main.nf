@@ -22,6 +22,8 @@ process ICEBERG_ICESEARCH {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
+    makeblastdb -in $fasta -dbtype nucl
+
     mkdir ${prefix}
     blastn -db $fasta -query $db/ICE_seq_all.fas \\
         -outfmt "6 qseqid sseqid qstart qend qlen sstart send slen pident qcovhsp length mismatch score evalue" \\

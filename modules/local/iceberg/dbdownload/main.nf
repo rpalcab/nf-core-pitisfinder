@@ -1,6 +1,6 @@
 process ICEBERG_DB_DOWNLOAD {
     tag "iceberg_dwnld"
-    label 'process_low'
+    label 'process_single'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -36,10 +36,8 @@ process ICEBERG_DB_DOWNLOAD {
         print ">" header
     } else {
         print
-    }
+        }
     }' db/ICE_seq_all.fas > tmp && mv tmp db/ICE_seq_all.fas
-
-    makeblastdb -in db/ICE_seq_all.fas -dbtype nucl
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
