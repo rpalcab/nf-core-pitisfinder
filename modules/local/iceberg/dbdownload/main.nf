@@ -7,11 +7,8 @@ process ICEBERG_DB_DOWNLOAD {
         'https://depot.galaxyproject.org/singularity/blast:2.16.0--h66d330f_4':
         'biocontainers/blast:2.16.0--h66d330f_4' }"
 
-    input:
-    val(iceberg_db)
-
     output:
-    path("db/")                             , emit: db
+    path("ICE_db.fasta")                    , emit: db
     path "versions.yml"                     , emit: versions
 
     when:
@@ -20,15 +17,9 @@ process ICEBERG_DB_DOWNLOAD {
     script:
     def args = task.ext.args ?: ''
     """
-    mkdir db
-    if [[ "${iceberg_db}" == "null" ]]; then
-        wget -O db/ICE_seq_all.fas https://tool2-mml.sjtu.edu.cn/ICEberg3/data/download/ICE_seq_all.fas
-    else
-        ln -s ${iceberg_db} db/ICE_seq_all.fas
-    fi
-
+    wget https://tool2-mml.sjtu.edu.cn/ICEberg3/data/download/ICE_seq_all.fas
     # Check all characters in headers are valid for makeblastdb
-    sed -i 's/ .*//g' db/ICE_seq_all.fas
+    sed -i 's/ .*//g' ICE_seq_all.fas
     awk '{
     if (\$0 ~ /^>/) {
         header = substr(\$0, 2)
@@ -37,7 +28,7 @@ process ICEBERG_DB_DOWNLOAD {
     } else {
         print
         }
-    }' db/ICE_seq_all.fas > tmp && mv tmp db/ICE_seq_all.fas
+    }' ICE_seq_all.fas > ICE_db.fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -47,8 +38,7 @@ process ICEBERG_DB_DOWNLOAD {
 
     stub:
     """
-    mkdir db
-    touch db/ICE_seq_all.fas
+    touch ICE_db.fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

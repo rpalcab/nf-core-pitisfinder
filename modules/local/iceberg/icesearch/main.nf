@@ -25,7 +25,7 @@ process ICEBERG_ICESEARCH {
     makeblastdb -in $fasta -dbtype nucl
 
     mkdir ${prefix}
-    blastn -db $fasta -query $db/ICE_seq_all.fas \\
+    blastn -db $fasta -query $db \\
         -outfmt "6 qseqid sseqid qstart qend qlen sstart send slen pident qcovhsp length mismatch score evalue" \\
         -evalue 5E-10 -perc_identity 80 -qcov_hsp_perc 60 \\
         -out ${prefix}/blast.tsv

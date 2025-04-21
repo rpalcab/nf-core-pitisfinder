@@ -196,10 +196,15 @@ workflow PITISFINDER {
         // ICEBERG
         //
         // Create a channel with the ICEberg database path or 'null' if not provided
-        ch_iceberg_db = params.iceberg_db ? Channel.value(params.iceberg_db) : Channel.value('null')
-        // Run the ICEBERG_DB_DOWNLOAD process
-        ICEBERG_DB_DOWNLOAD(ch_iceberg_db)
-        ICEBERG_ICESEARCH(ch_mobsuite_chr, ICEBERG_DB_DOWNLOAD.out.db)
+        if ( !params.iceberg_db){
+            // Run the ICEBERG_DB_DOWNLOAD process
+            ICEBERG_DB_DOWNLOAD()
+            ch_iceberg_db = ICEBERG_DB_DOWNLOAD.out.db
+        }
+        else {
+            ch_iceberg_db = Channel.value(params.iceberg_db)
+        }
+        ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
     }
     //
     // Collate and save software versions

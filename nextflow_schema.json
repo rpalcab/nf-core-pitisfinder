@@ -56,8 +56,8 @@
                 },
                 "iceberg_db": {
                     "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to ICEBERG 3.0 databases. See https://tool2-mml.sjtu.edu.cn/ICEberg3/ for mandatory directory structure and content.",
+                    "format": "file-path",
+                    "description": "Path to ICEBERG 3.0 database (ICE_seq_all.fas). See https://tool2-mml.sjtu.edu.cn/ICEberg3/ for file availability and content.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {
