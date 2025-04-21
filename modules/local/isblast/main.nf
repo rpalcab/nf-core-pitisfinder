@@ -28,7 +28,10 @@ process IS_BLAST {
         -outfmt "6 qseqid sseqid qstart qend qlen sstart send slen pident qcovhsp length mismatch score evalue" \\
         -evalue 5E-10 -perc_identity 90 -qcov_hsp_perc 90 \\
         -out ${prefix}/IS_chr.tsv
-    sed -i '1s/^/qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n/' ${prefix}/IS_chr.tsv
+
+    printf "qseqid\\tsseqid\\tqstart\\tqend\\tqlen\\tsstart\\tsend\\tslen\\tpident\\tqcovhsp\\tlength\\tmismatch\\tscore\\tevalue\\n" > tmp
+    cat ${prefix}/IS_chr.tsv >> tmp
+    mv tmp ${prefix}/IS_chr.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
