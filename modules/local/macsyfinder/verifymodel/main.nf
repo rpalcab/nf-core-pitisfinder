@@ -12,7 +12,7 @@ process VERIFYMODEL {
 
     output:
     tuple val(model), path("models/")           , emit: model
-    path "versions.yml"                                  , emit: versions
+    path "versions.yml"                         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,7 +20,6 @@ process VERIFYMODEL {
     script:
     def dwnl_model = model.contains("/") ? model.tokenize("/")[0] : model
     """
-    echo ${dwnl_model}
     macsydata install ${dwnl_model} -t models/
 
     cat <<-END_VERSIONS > versions.yml
@@ -31,6 +30,8 @@ process VERIFYMODEL {
 
     stub:
     """
+    mkdir models/
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         macsyfinder: \$(macsyfinder --version | head -n1 | cut -f2 -d' ')
