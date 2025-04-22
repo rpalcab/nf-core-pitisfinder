@@ -1,0 +1,53 @@
+Changes in component 'nf-core/plasmidfinder'
+'modules/nf-core/plasmidfinder/meta.yml' is unchanged
+'modules/nf-core/plasmidfinder/environment.yml' is unchanged
+Changes in 'plasmidfinder/main.nf':
+--- modules/nf-core/plasmidfinder/main.nf
++++ modules/nf-core/plasmidfinder/main.nf
+@@ -12,11 +12,11 @@
+     tuple val(meta), path(seqs)
+ 
+     output:
+-    tuple val(meta), path("*.json")                 , emit: json
+-    tuple val(meta), path("*.txt")                  , emit: txt
+-    tuple val(meta), path("*.tsv")                  , emit: tsv
+-    tuple val(meta), path("*-hit_in_genome_seq.fsa"), emit: genome_seq
+-    tuple val(meta), path("*-plasmid_seqs.fsa")     , emit: plasmid_seq
++    tuple val(meta), path("${meta.id}/*.json")                 , emit: json
++    tuple val(meta), path("${meta.id}/*.txt")                  , emit: txt
++    tuple val(meta), path("${meta.id}/*.tsv")                  , emit: tsv
++    tuple val(meta), path("${meta.id}/*-hit_in_genome_seq.fsa"), emit: genome_seq
++    tuple val(meta), path("${meta.id}/*-plasmid_seqs.fsa")     , emit: plasmid_seq
+     path "versions.yml"                             , emit: versions
+ 
+     when:
+@@ -27,18 +27,19 @@
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     def VERSION = '2.1.6' // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
+     """
++    mkdir $prefix
+     plasmidfinder.py \\
+         $args \\
+         -i $seqs \\
+-        -o ./ \\
++        -o $prefix \\
+         -x
+ 
+     # Rename hard-coded outputs with prefix to avoid name collisions
+-    mv data.json ${prefix}.json
+-    mv results.txt ${prefix}.txt
+-    mv results_tab.tsv ${prefix}.tsv
+-    mv Hit_in_genome_seq.fsa ${prefix}-hit_in_genome_seq.fsa
+-    mv Plasmid_seqs.fsa ${prefix}-plasmid_seqs.fsa
++    mv ${prefix}/data.json ${prefix}/${prefix}.json
++    mv ${prefix}/results.txt ${prefix}/${prefix}.txt
++    mv ${prefix}/results_tab.tsv ${prefix}/${prefix}.tsv
++    mv ${prefix}/Hit_in_genome_seq.fsa ${prefix}/${prefix}-hit_in_genome_seq.fsa
++    mv ${prefix}/Plasmid_seqs.fsa ${prefix}/${prefix}-plasmid_seqs.fsa
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+
+'modules/nf-core/plasmidfinder/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/plasmidfinder/tests/main.nf.test' is unchanged
+************************************************************

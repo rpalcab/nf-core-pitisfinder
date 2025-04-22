@@ -10,6 +10,7 @@ include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfco
 include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
+include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
 include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
 include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
@@ -73,11 +74,19 @@ workflow PITISFINDER {
     // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
     //
     if ( !params.skip_plasmids ) {
+        //
         // MOBSUITE RECON
+        //
         MOBSUITE_RECON (ch_fasta)
         ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
         ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
         ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
+
+        //
+        // PLASMIDFINDER
+        //
+        PLASMIDFINDER (ch_fasta)
+        ch_versions = ch_versions.mix( PLASMIDFINDER.out.versions )
 
         // RENAME PLASMIDS
         // OJO! Ya no filtra por tamaño
