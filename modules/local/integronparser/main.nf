@@ -10,15 +10,15 @@ process INTEGRON_PARSER {
     tuple val(meta), path(fasta), path(gff), path(amr), path(integrons)
 
     output:
-    tuple val(meta), path("integrons_summary.tsv"), emit: report, optional: true
-    tuple val(meta), path("int_*.fasta"), emit: fastas, optional: true
+    tuple val(meta), path("${meta.id}/integrons_summary.tsv"), emit: report, optional: true
+    tuple val(meta), path("${meta.id}/int_*.fasta"), emit: fastas, optional: true
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def prefix = "${meta.id}"
     """
-    integron_parser.py -i $integrons -f $fasta -a $gff -r $amr -s ${meta.id} -o .
+    integron_parser.py -i $integrons -f $fasta -a $gff -r $amr -s ${prefix} -o ${prefix}
     """
 
     stub:

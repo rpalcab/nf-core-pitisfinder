@@ -196,7 +196,7 @@ workflow PITISFINDER {
         //
 
         if ( params.genomad_db ) {
-            ch_db_for_genomad = ch_genomad_db
+            ch_db_for_genomad = Channel.fromPath(params.genomad_db)
         } else {
             ch_db_for_genomad = GENOMAD_DOWNLOAD( ).genomad_db
             ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
