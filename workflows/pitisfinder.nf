@@ -56,6 +56,24 @@ process RENAME_PLASMIDS {
     """
 }
 
+process FILTER_FAA {
+    tag "$meta.id"
+    label 'process_single'
+
+    input:
+    tuple val(meta), path(faa), path(gbk), path(chr)
+
+    output:
+    tuple val(meta), path("${meta.id}/*_filtered.faa"), emit: chr
+
+    script:
+    def prefix = "${meta.id}"
+    """
+    cut -f2,5 $chr | grep "chromosome" | cut -f2 > chr.txt
+    faa_contig_filter.py -f $faa -g $gbk -c chr.txt -o $prefix
+    """
+}
+
 workflow PITISFINDER {
 
     take:
@@ -211,13 +229,14 @@ workflow PITISFINDER {
         //
         // MACSYFINDER
         ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-            return [ meta, faa ]
-        }
-        .set { ch_macsyfinder }
+            return [ meta, faa, gbk ]
+        }.join(MOBSUITE_RECON.out.contig_report)
+        .set { ch_msy_preproc }
+        FILTER_FAA (ch_msy_preproc)
         ch_msymodel = Channel.value('CONJScan/Plasmids')
         VERIFYMODEL (ch_msymodel)
         ch_model = VERIFYMODEL.out.model
-        MACSYFINDER (ch_macsyfinder, ch_model)
+        MACSYFINDER (FILTER_FAA.out.chr, ch_model)
         ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
         //
         // ICEBERG
