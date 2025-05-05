@@ -30,6 +30,7 @@ include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verif
 include { ICEBERG_DB_DOWNLOAD         } from '../modules/local/iceberg/dbdownload/main'
 include { ICEBERG_ICESEARCH           } from '../modules/local/iceberg/icesearch/main'
 include { ICEBERG_FILTER              } from '../modules/local/iceberg/icefilter/main'
+include { ICEFINDER2                  } from '../modules/local/icefinder2/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -253,6 +254,14 @@ workflow PITISFINDER {
         ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
         ch_versions = ch_versions.mix( ICEBERG_ICESEARCH.out.versions )
         ICEBERG_FILTER(ICEBERG_ICESEARCH.out.tsv)
+        //
+        // ICEFINDER2
+        //
+        // ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+        //     return [ meta, gbk ]
+        // }.set { ch_icefinder }
+        // ICEFINDER2 ( ch_icefinder )
+        // ch_versions = ch_versions.mix( ICEFINDER2.out.versions )
     }
     //
     // Collate and save software versions
