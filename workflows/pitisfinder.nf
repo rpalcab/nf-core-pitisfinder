@@ -11,8 +11,8 @@ include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfco
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
 include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
-include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
-include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
+// include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
+// include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA                 } from '../modules/local/copla/copla/main'
 include { INTEGRONFINDER              } from '../modules/local/integronfinder/main'
@@ -214,14 +214,14 @@ workflow PITISFINDER {
         // Genomad
         //
 
-        if ( params.genomad_db ) {
-            ch_db_for_genomad = Channel.fromPath(params.genomad_db)
-        } else {
-            ch_db_for_genomad = GENOMAD_DOWNLOAD( ).genomad_db
-            ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
-        }
-        ch_identified_viruses = GENOMAD_ENDTOEND ( ch_fasta, ch_db_for_genomad ).virus_fasta
-        ch_versions.mix( GENOMAD_ENDTOEND.out.versions )
+        // if ( params.genomad_db ) {
+        //     ch_db_for_genomad = Channel.fromPath(params.genomad_db)
+        // } else {
+        //     ch_db_for_genomad = GENOMAD_DOWNLOAD( ).genomad_db
+        //     ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
+        // }
+        // ch_identified_viruses = GENOMAD_ENDTOEND ( ch_fasta, ch_db_for_genomad ).virus_fasta
+        // ch_versions.mix( GENOMAD_ENDTOEND.out.versions )
     }
 
     if ( !params.skip_ices ) {
