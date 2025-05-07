@@ -1,0 +1,91 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "isescan"
+description: "A python pipeline to identify IS (Insertion Sequence) elements in genome and metagenome "
+keywords:
+  - IS
+  - insertion
+  - bacteria
+  - genomics
+tools:
+  - "isescan":
+      description: "A python pipeline to identify IS (Insertion Sequence) elements in genome and metagenome "
+      homepage: "https://github.com/xiezhq/ISEScan"
+      documentation: "https://github.com/xiezhq/ISEScan"
+      tool_dev_url: "https://github.com/xiezhq/ISEScan"
+      doi: "10.1093/bioinformatics/btx433"
+      licence: ['GPL']
+      identifier: biotools:isescan
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - fasta:
+        type: file
+        description: Assembly FASTA file of a bacterial genome.
+        pattern: "*.{fasta,fa,fna}"
+
+output:
+  - tsv:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.tsv":
+        type: file
+        description: Details about IS copies in the sample, one copy per line, tab-separated tabular table
+        pattern: "*.tsv"
+  - gff:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.gff":
+        type: file
+        description: Each IS copy and its TIR, gff3 format.
+        pattern: "*.gff"
+  - isfna:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.is.fna":
+        type: file
+        description: The nucleic acid sequence of each IS copy, fasta format.
+        pattern: "*.is.fna"
+  - orffna:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.orf.fna":
+        type: file
+        description: The nucleic acid sequence of the Tpase gene in each IS copy, fasta format.
+        pattern: "*.orf.fna"
+  - orffaa:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.orf.faa":
+        type: file
+        description: The amino acid sequence of the Tpase in each IS copy, fasta format.
+        pattern: "*.orf.faa"
+  - versions:
+    - "versions.yml":
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@rpalcab"
+maintainers:
+  - "@rpalcab"

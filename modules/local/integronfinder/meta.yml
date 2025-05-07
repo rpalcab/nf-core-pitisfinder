@@ -1,0 +1,95 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "integronfinder"
+description: write your description here
+keywords:
+  - integron
+  - bacteria
+  - genomics
+tools:
+  - "integronfinder":
+      description: "Integron Finder aims at detecting integrons in DNA sequences"
+      homepage: "https://integronfinder.readthedocs.io/en/latest/"
+      documentation: "https://integronfinder.readthedocs.io/en/latest/"
+      tool_dev_url: "https://github.com/gem-pasteur/Integron_Finder/"
+      doi: "10.3390/microorganisms10040700"
+      licence: ['GPL v3-or-later']
+      identifier: ""
+
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - fasta:
+        type: file
+        description: A bacterial genome assembly in FASTA format
+        pattern: "*.{fasta,fa,fna}"
+
+output:
+  - integrons:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.integrons":
+        type: file
+        description: A file with all integrons and their elements detected in all sequences in the input file.
+        pattern: "*.integrons"
+
+  - summary:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.summary":
+        type: file
+        description: A summary file with the number and type of integrons per sequence.
+        pattern: "*.summary"
+
+  - log:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "integron_finder.out":
+        type: file
+        description: A copy standard output.
+        pattern: "integron_finder.out"
+
+  - gbk:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.gbk":
+        type: file
+        description: Genbank files with all the annotations found (present in the .integrons file).
+        pattern: "*.gbk"
+
+  - pdf:
+    - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. `[ id:'sample1', single_end:false ]`
+    - "*.pdf":
+        type: file
+        description: A simple pdf graphic with complete integrons.
+        pattern: "*.pdf"
+
+  - versions:
+    - "versions.yml":
+        type: file
+        description: File containing software versions
+        pattern: "versions.yml"
+
+authors:
+  - "@rpalcab"
+maintainers:
+  - "@rpalcab"

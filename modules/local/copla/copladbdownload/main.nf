@@ -1,4 +1,5 @@
 process COPLA_COPLADBDOWNLOAD {
+    tag "copladb"
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"

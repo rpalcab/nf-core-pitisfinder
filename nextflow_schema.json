@@ -42,10 +42,28 @@
                     "description": "Path to IS database (.fasta). If none is provided, IS will not be performed.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "phigaro_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to PHIGARO pvogdatabases. See http://download.ripcm.com/phigaro/ for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "phastest_db": {
                     "type": "string",
                     "format": "directory-path",
                     "description": "Path to PHASTEST databases. See https://phastest.ca/databases for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "iceberg_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to ICEBERG 3.0 database (ICE_seq_all.fas). See https://tool2-mml.sjtu.edu.cn/ICEberg3/ for file availability and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "genomad_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to Genomad database. See https://portal.nersc.gov/genomad/ for mandatory directory structure and content.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {
@@ -60,6 +78,45 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature",
                     "hidden": true
+                }
+            }
+        },
+        "skipping_options": {
+            "title": "Skipping Options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "fa_icon": "fas fa-forward",
+            "properties": {
+                "skip_plasmids": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip plasmid search.",
+                    "default": false
+                },
+                "skip_integrons": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip integron search.",
+                    "default": false
+                },
+                "skip_is": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip IS search.",
+                    "default": false
+                },
+                "skip_prophages": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip prophage search.",
+                    "default": false
+                },
+                "skip_ices": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Skip ICEs search.",
+                    "default": false
                 }
             }
         },

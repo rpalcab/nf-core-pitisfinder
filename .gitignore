@@ -6,7 +6,7 @@ testing*
 *.pyc
 null/
 out_test/
-./samplesheet.csv
+samplesheet.csv
 test_samples/
 expected_copla.txt
 .samplesdir.txt

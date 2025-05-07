@@ -1,0 +1,33 @@
+name: iceberg_db_download
+description: Downloads the ICEberg database if not provided by the user
+keywords:
+  - iceberg
+  - database
+  - download
+tools:
+  - wget:
+      description: GNU Wget is a free software package for retrieving files using HTTP, HTTPS, and FTP protocols.
+      homepage: https://www.gnu.org/software/wget/
+      documentation: https://www.gnu.org/software/wget/manual/
+      tool_dev_url: https://savannah.gnu.org/git/?group=wget
+      doi: ""
+      licence: ["GPL-3.0-or-later"]
+
+input:
+  - iceberg_db:
+      type: string
+      description: |
+        Path to the ICEberg database file if provided by the user, or "null" if not provided
+
+output:
+  - iceberg_db:
+      type: file
+      description: The ICEberg database file (ICE_seq_all.fas)
+      pattern: "ICE_seq_all.fas"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+
+authors:
+  - "@rpalcab"

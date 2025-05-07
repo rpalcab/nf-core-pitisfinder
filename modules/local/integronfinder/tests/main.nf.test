@@ -1,0 +1,111 @@
+// TODO nf-core: Once you have added the required tests, please run the following command to build this file:
+// nf-core modules test integronfinder
+nextflow_process {
+
+    name "Test Process INTEGRONFINDER"
+    script "../main.nf"
+    process "INTEGRONFINDER"
+
+    tag "modules"
+    tag "modules_nfcore"
+    tag "integronfinder"
+
+    test("ecoli - fasta - fasta assembly") {
+        when {
+            params {
+                outdir = "tests/results"
+            }
+            process {
+                """
+                input[0] = [
+                    [ id:'test_sample' ], // meta map
+                    file('https://zenodo.org/records/15017406/files/Ecol_VC_751-2.fasta'),
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.integrons.size() == 1
+            assert process.out.summary.size() == 1
+            assert process.out.log.size() == 1
+            assert process.out.gbk.size() == 1
+            assert process.out.pdf.size() == 1
+            assert process.out.versions.size() == 1
+
+            with(process.out.integrons[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName() == "test_sample/test_sample.integrons"
+            }
+
+            with(process.out.summary[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName() == "test_sample/test_sample.summary"
+            }
+
+            with(process.out.log[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName() == "test_sample/integron_finder.out"
+            }
+
+            with(process.out.gbk[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName().endsWith(".gbk")
+            }
+
+            with(process.out.pdf[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName().endsWith(".pdf")
+            }
+
+            with(process.out.versions[0]) {
+                assert path(it).exists()
+                assert path(it).getName() == "versions.yml"
+                assert path(it).text.contains("integron_finder")
+            }
+        }
+    }
+
+    test("test-data - fasta - stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir = "tests/results"
+            }
+            process {
+                """
+                input[0] = [
+                    [ id:'test_sample' ], // meta map
+                    file('https://zenodo.org/records/15017406/files/Ecol_VC_751-2.fasta'),
+                ]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.integrons.size() == 1
+            assert process.out.summary.size() == 1
+            assert process.out.versions.size() == 1
+
+            with(process.out.integrons[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName() == "test_sample/test_sample.integrons"
+            }
+
+            with(process.out.summary[0]) {
+                assert path(it[1]).exists()
+                assert path(it[1]).getName() == "test_sample/test_sample.summary"
+            }
+
+            with(process.out.versions[0]) {
+                assert path(it).exists()
+                assert path(it).getName() == "versions.yml"
+                assert path(it).text.contains("integron_finder")
+            }
+        }
+    }
+}

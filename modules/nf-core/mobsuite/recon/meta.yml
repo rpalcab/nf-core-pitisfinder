@@ -31,40 +31,47 @@ output:
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-      - results/chromosome.fasta:
-          type: file
-          description: FASTA file of all contigs found to belong to the chromosome
-          pattern: "chromosome.fasta"
+      - "*/chromosome.fasta":
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+          pattern: "*/chromosome.fasta"
   - contig_report:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-      - results/contig_report.txt:
-          type: file
-          description: Assignment of the contig to chromosome or a particular plasmid
-            grouping
-          pattern: "contig_report.txt"
+      - "*/contig_report.txt":
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+          pattern: "*/contig_report.txt"
   - plasmids:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-      - results/plasmid_*.fasta:
-          type: file
-          description: Each plasmid group is written to an individual FASTA
-          pattern: "plasmid_*.fasta"
+      - "*/plasmid_*.fasta":
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+          pattern: "*/plasmid_*.fasta"
   - mobtyper_results:
       - meta:
           type: map
           description: |
             Groovy Map containing sample information
             e.g. [ id:'test', single_end:false ]
-      - results/mobtyper_results.txt:
-          type: file
-          description: Aggregate MOB-typer report files for all identified plasmid
+      - "*/mobtyper_results.txt":
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
           pattern: "mobtyper_results.txt"
   - versions:
       - versions.yml:

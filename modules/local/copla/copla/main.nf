@@ -12,22 +12,24 @@ process COPLA_COPLA {
     path (copladb)
 
     output:
-    path "copla/$plasmid_name/", emit: results
-    path "copla/$plasmid_name/copla.txt", emit: log
+    path "${meta.id}/$plasmid_name/", emit: results
+    path "${meta.id}/$plasmid_name/copla.txt", emit: log
     path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir -p copla/${plasmid_name}
+    mkdir -p ${prefix}/${plasmid_name}
 
     copla \\
          "$file" \\
          "${copladb}/Copla_RS84/RS84f_sHSBM.pickle" \\
          "${copladb}/Copla_RS84/CoplaDB.fofn" \\
-         copla/${plasmid_name} > copla/${plasmid_name}/copla.txt
+         ${prefix}/${plasmid_name} > ${prefix}/${plasmid_name}/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -37,8 +39,8 @@ process COPLA_COPLA {
 
     stub:
     """
-    mkdir -p copla/
-    touch copla/copla.txt
+    mkdir -p ${meta.id}/
+    touch ${meta.id}/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

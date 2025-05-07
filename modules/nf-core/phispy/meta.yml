@@ -1,0 +1,159 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/yaml-schema.json
+name: "phispy"
+description: Predict prophages in bacterial genomes
+keywords:
+  - genomics
+  - virus
+  - phage
+  - prophage
+  - annotation
+  - identification
+tools:
+  - "phispy":
+      description: "Prophage finder using multiple metrics"
+      homepage: "https://github.com/linsalrob/PhiSpy/blob/master/README.md"
+      documentation: "https://github.com/linsalrob/PhiSpy/blob/master/README.md"
+      tool_dev_url: "https://github.com/linsalrob/PhiSpy/"
+      doi: "10.1093/nar/gks406"
+      licence: ["MIT"]
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - gbk:
+        type: file
+        description: Genome file in .gbk or .gbff format.
+        pattern: "*.{gbk,gbff}"
+output:
+  - coordinates:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}.tsv:
+          type: file
+          description: |
+            Coordinates of each prophage identified in the genome,
+            and their att sites (if found).
+          pattern: "*.{tsv}"
+  - gbk:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}.gb*:
+          type: file
+          description: |
+            A duplicate GenBank record that is the same as the input record,
+            but we have inserted the prophage information, including att
+            sites into the record.
+          pattern: "*.{gbk,gbff}"
+  - log:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}.log:
+          type: file
+          description: File containing the PhiSpy execution log
+          pattern: "*.{log}"
+  - information:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_prophage_information.tsv:
+          type: file
+          description: |
+            File containing all the genes of the genome, one per line.
+            The tenth column describes how likely the gene is a phage gene.
+          pattern: "*.{tsv}"
+  - bacteria_fasta:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_bacteria.fasta:
+          type: file
+          description: Genome with prophage regions masked with N.
+          pattern: "*.{fasta}"
+  - bacteria_gbk:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_bacteria.gbk:
+          type: file
+          description: Genome sequences identified as bacterial.
+          pattern: "*.{gbk}"
+  - phage_fasta:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_phage.fasta:
+          type: file
+          description: Phage sequences extracted from the genome.
+          pattern: "*.{fasta}"
+  - phage_gbk:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_phage.gbk:
+          type: file
+          description: Phage sequences extracted from the genome.
+          pattern: "*.{gbk}"
+  - prophage_gff:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_prophage.gff3:
+          type: file
+          description: Prophage information in GFF3 format.
+          pattern: "*.{gff3}"
+  - prophage_tbl:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_prophage.tbl:
+          type: file
+          description: |
+            File containing prophage number and its location in the genome.
+          pattern: "*.{tbl}"
+  - prophage_tsv:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - ${prefix}_prophage.tsv:
+          type: file
+          description: |
+            A file containing simpler version of the coordinates file,
+            with only prophage number, contig, start and stop.
+          pattern: "*.{tsv}"
+  - versions:
+      - versions.yml:
+          type: file
+          description: File containing software versions
+          pattern: "versions.yml"
+authors:
+  - "@jvfe"
+maintainers:
+  - "@jvfe"

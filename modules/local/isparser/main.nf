@@ -1,6 +1,6 @@
 process IS_PARSER {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -19,7 +19,7 @@ process IS_PARSER {
     def prefix = "${meta.id}"
     """
     mkdir ${prefix}
-    IS_parser.py -i $report_raw -o ${prefix}
+    blastn_overlap_solver.py -i $report_raw -o ${prefix}
     """
 
     stub:
