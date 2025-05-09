@@ -104,8 +104,8 @@ workflow PITISFINDER {
         //
         // PLASMIDFINDER
         //
-        PLASMIDFINDER (ch_fasta)
-        ch_versions = ch_versions.mix( PLASMIDFINDER.out.versions )
+        // PLASMIDFINDER (ch_fasta)
+        // ch_versions = ch_versions.mix( PLASMIDFINDER.out.versions )
 
         // RENAME PLASMIDS
         // OJO! Ya no filtra por tamaño
@@ -157,16 +157,16 @@ workflow PITISFINDER {
         } else {
             ch_is_input = ch_fasta
         }
-        ch_isdb = Channel.empty()
-        if (params.is_db){
-            ch_isdb = Channel.value(params.is_db)
-            // BLASTn search
-            IS_BLAST (ch_is_input, ch_isdb)
-            ch_versions = ch_versions.mix( IS_BLAST.out.versions )
-            // Results filtering
-            ch_raw_is = IS_BLAST.out.report
-            IS_PARSER (ch_raw_is)
-        }
+        // ch_isdb = Channel.empty()
+        // if (params.is_db){
+        //     ch_isdb = Channel.value(params.is_db)
+        //     // BLASTn search
+        //     IS_BLAST (ch_is_input, ch_isdb)
+        //     ch_versions = ch_versions.mix( IS_BLAST.out.versions )
+        //     // Results filtering
+        //     ch_raw_is = IS_BLAST.out.report
+        //     IS_PARSER (ch_raw_is)
+        // }
         ISESCAN (ch_is_input)
         ch_versions = ch_versions.mix( ISESCAN.out.versions )
     }
@@ -175,11 +175,11 @@ workflow PITISFINDER {
         //
         // PHIPSY
         //
-        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-            return [ meta, gbk ]
-            }.set { ch_phispy }
-        PHISPY (ch_phispy)
-        ch_versions = ch_versions.mix( PHISPY.out.versions )
+        // ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+        //     return [ meta, gbk ]
+        //     }.set { ch_phispy }
+        // PHISPY (ch_phispy)
+        // ch_versions = ch_versions.mix( PHISPY.out.versions )
 
         //
         // PHIGARO
@@ -243,17 +243,17 @@ workflow PITISFINDER {
         // ICEBERG
         //
         // Create a channel with the ICEberg database path or 'null' if not provided
-        if ( !params.iceberg_db){
-            // Run the ICEBERG_DB_DOWNLOAD process
-            ICEBERG_DB_DOWNLOAD()
-            ch_iceberg_db = ICEBERG_DB_DOWNLOAD.out.db
-        }
-        else {
-            ch_iceberg_db = Channel.value(params.iceberg_db)
-        }
-        ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
-        ch_versions = ch_versions.mix( ICEBERG_ICESEARCH.out.versions )
-        ICEBERG_FILTER(ICEBERG_ICESEARCH.out.tsv)
+        // if ( !params.iceberg_db){
+        //     // Run the ICEBERG_DB_DOWNLOAD process
+        //     ICEBERG_DB_DOWNLOAD()
+        //     ch_iceberg_db = ICEBERG_DB_DOWNLOAD.out.db
+        // }
+        // else {
+        //     ch_iceberg_db = Channel.value(params.iceberg_db)
+        // }
+        // ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
+        // ch_versions = ch_versions.mix( ICEBERG_ICESEARCH.out.versions )
+        // ICEBERG_FILTER(ICEBERG_ICESEARCH.out.tsv)
         //
         // ICEFINDER2
         //
