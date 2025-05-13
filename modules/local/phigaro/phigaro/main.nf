@@ -27,12 +27,17 @@ process PHIGARO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    phigaro \\
-        $args \\
-        -f $fasta \\
-        -o $prefix \\
-        -c $config \\
-        -t $task.cpus
+    # Sanity check
+    count_nts.sh $fasta > contig_sizes.txt
+
+    if awk '\$2 > 20000 {print; found=1} END {if (found) exit 1}' contig_sizes.txt; then
+        phigaro \\
+            $args \\
+            -f $fasta \\
+            -o $prefix \\
+            -c $config \\
+            -t $task.cpus
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
