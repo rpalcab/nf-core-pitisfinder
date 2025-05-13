@@ -171,7 +171,7 @@ def write_fasta(cds_output_file: Path, d_int: Dict) -> None:
             cds_output_handle.write(v + "\n")
     return None
 
-def save_sequence(unified_df: pd.DataFrame, fa_file: Path) -> None:
+def save_sequence(unified_df: pd.DataFrame, fa_file: Path, out_dir: Path) -> None:
     cont = unified_df['Contig']
     start = unified_df['Start'] - 1
     end = unified_df['End'] - 1
@@ -180,7 +180,7 @@ def save_sequence(unified_df: pd.DataFrame, fa_file: Path) -> None:
     for seq_record in SeqIO.parse(fa_file, "fasta"):
         if seq_record.id == cont:
             d = {name: str(seq_record.seq[start:end])}
-            write_fasta(f'{name}.fasta', d)
+            write_fasta(out_dir / f'{name}.fasta', d)
             break
     return None
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         unified_df = merge_annotations(subdf, df_ann, df_abr, args.nts_diff)    # Update annotations: abr > bakta > i_f
         cassettes, integron_name = get_cassettes(unified_df, count, args.sample)                     # get cassette, get name
         summary_df = merge_info(summary_df, args.sample, contig, integron_name, d_info, cassettes, args.max_cas)
-        save_sequence(summary_df.iloc[-1], args.fasta_file)                                    # Save integron sequence (read fasta, get coordinates, save sequence)
+        save_sequence(summary_df.iloc[-1], args.fasta_file, args.out_dir)                                    # Save integron sequence (read fasta, get coordinates, save sequence)
 
     summary_df.to_csv(report_out, index=False)
     logging.info(f"Report saved to: {report_out}")
