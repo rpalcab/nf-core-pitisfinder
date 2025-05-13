@@ -14,6 +14,7 @@ process PHIGARO {
 
     output:
     path("${meta.id}/${meta.id}.phigaro.bed")  , optional:true, emit: bed
+    path("${meta.id}/${meta.id}.phigaro.fasta"), optional:true, emit: fasta
     path("${meta.id}/${meta.id}.phigaro.gff3") , optional:true, emit: gff3
     path("${meta.id}/${meta.id}.phigaro.html") , optional:true, emit: html
     path("${meta.id}/${meta.id}.phigaro.tsv")  , optional:true, emit: tsv

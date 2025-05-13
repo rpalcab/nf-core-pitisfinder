@@ -54,6 +54,12 @@
                     "description": "Path to PHASTEST databases. See https://phastest.ca/databases for mandatory directory structure and content.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "phispy_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to pVOG database HMM profiles. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "iceberg_db": {
                     "type": "string",
                     "format": "file-path",

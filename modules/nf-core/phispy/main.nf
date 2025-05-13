@@ -9,6 +9,7 @@ process PHISPY {
 
     input:
     tuple val(meta), path(gbk)
+    path dbfile
 
     output:
     tuple val(meta), path("${prefix}/${prefix}.tsv")                     , emit: coordinates
@@ -29,6 +30,9 @@ process PHISPY {
 
     script:
     def args = task.ext.args ?: ''
+    // Add pHHM database if provided
+    def db_arg = dbfile ? "--phmms $dbfile" : ''
+    args += " $db_arg"
     prefix = task.ext.prefix ?: "${meta.id}"
     // Extract GBK file extension, i.e. .gbff, .gbk.gz
     gbk_extension = gbk.getName() - gbk.getSimpleName()

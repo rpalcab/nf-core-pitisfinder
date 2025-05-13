@@ -175,11 +175,15 @@ workflow PITISFINDER {
         //
         // PHIPSY
         //
-        // ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-        //     return [ meta, gbk ]
-        //     }.set { ch_phispy }
-        // PHISPY (ch_phispy)
-        // ch_versions = ch_versions.mix( PHISPY.out.versions )
+        ch_phispydb = Channel.value([])
+        if (params.phispy_db){
+            ch_phispydb = Channel.value(params.phispy_db)
+        }
+        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+            return [ meta, gbk ]
+            }.set { ch_phispy }
+        PHISPY (ch_phispy, ch_phispydb)
+        ch_versions = ch_versions.mix( PHISPY.out.versions )
 
         //
         // PHIGARO
