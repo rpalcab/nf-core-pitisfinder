@@ -12,8 +12,10 @@ process COPLA_COPLA {
     path (copladb)
 
     output:
-    path "${meta.id}/$plasmid_name/", emit: results
-    path "${meta.id}/$plasmid_name/copla.txt", emit: log
+    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/"), emit: results
+    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/*.qry_info.tsv"), emit: query
+    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/*.ptu_prediction.tsv"), emit: ptu
+    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/copla.txt"), emit: log
     path "versions.yml", emit: versions
 
     when:

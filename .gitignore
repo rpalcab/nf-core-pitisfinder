@@ -14,3 +14,4 @@ modules/local/copla/Dockerfile*
 data/
 minimal_test/
 flowchart.png
+msy_model_check.py

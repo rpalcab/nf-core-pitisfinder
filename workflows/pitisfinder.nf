@@ -11,6 +11,7 @@ include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfco
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
 include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
+include { PLASMID_PARSER               } from '../modules/local/plasmidparser/main'
 // include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
 // include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
@@ -100,7 +101,6 @@ workflow PITISFINDER {
         ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
         ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
         ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
-
         //
         // PLASMIDFINDER
         //
@@ -129,6 +129,32 @@ workflow PITISFINDER {
         }
         COPLA_COPLA ( ch_plasmids, ch_copladb)
         ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
+
+        // PREPARE PLASMID_PARSER CHANNEL
+        COPLA_COPLA.out.query
+            .join(COPLA_COPLA.out.ptu, by: [0, 1])
+            .set { ch_coplajoint }
+
+        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+            return [ meta, gff, amr ]
+            }.join(MOBSUITE_RECON.out.mobtyper_results)
+            .set { ch_mobsample }
+
+        ch_mobsample
+            .cross(ch_coplajoint)
+            .map { mob, copla ->
+                def meta = mob[0]
+                def gff = mob[1]
+                def amr = mob[2]
+                def mob_typer = mob[3]
+                def plasmid_name = copla[1]
+                def qry = copla[2]
+                def ptu = copla[3]
+                return [ meta, plasmid_name, qry, ptu, gff, amr, mob_typer ]
+            }
+            .set { ch_plasmidparser }
+
+        PLASMID_PARSER (ch_plasmidparser)
     }
 
     if ( !params.skip_integrons ) {
