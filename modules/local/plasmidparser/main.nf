@@ -10,8 +10,8 @@ process PLASMID_PARSER {
     tuple val(meta), val(plasmid_name), path(qry_info), path(ptu), path(gbk), path(mobsuite), path(contig_report)
 
     output:
-    tuple val(meta), path("${plasmid_name}.tsv"), emit: report
-    tuple val(meta), path("${plasmid_name}.gbk"), emit: gbk
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}.tsv"), emit: report
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}.gbk"), emit: gbk
 
     when:
     task.ext.when == null || task.ext.when

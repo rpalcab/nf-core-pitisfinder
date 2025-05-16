@@ -11,7 +11,8 @@ include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfco
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
 include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
-include { PLASMID_PARSER               } from '../modules/local/plasmidparser/main'
+include { PLASMID_PARSER              } from '../modules/local/plasmidparser/main'
+include { VISUALIZE                   } from '../modules/local/visualize/main'
 // include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
 // include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
@@ -184,6 +185,7 @@ workflow PITISFINDER {
             .set { ch_plasmidparser }
 
         PLASMID_PARSER (ch_plasmidparser)
+        VISUALIZE (PLASMID_PARSER.out.gbk)
     }
 
     if ( !params.skip_integrons ) {
