@@ -7,7 +7,7 @@ process PLASMID_PARSER {
         'docker://rpalcab/pitis_parser:1.0':
         'docker.io/rpalcab/pitis_parser:1.0' }"
     input:
-    tuple val(meta), val(plasmid_name), path(qry_info), path(ptu), path(gff), path(amr), path(mobsuite)
+    tuple val(meta), val(plasmid_name), path(qry_info), path(ptu), path(amr), path(mobsuite)
 
     output:
     tuple val(meta), path("$plasmid_name/plasmids_summary.tsv"), emit: report
@@ -18,7 +18,7 @@ process PLASMID_PARSER {
     script:
     def prefix = "${meta.id}"
     """
-    plasmid_parser.py -m $mobsuite -q $qry_info -p $ptu -a $gff -r $amr -n $plasmid_name -o $plasmid_name
+    plasmid_parser.py -m $mobsuite -q $qry_info -p $ptu -r $amr -n $plasmid_name -o $plasmid_name
     """
 
     stub:

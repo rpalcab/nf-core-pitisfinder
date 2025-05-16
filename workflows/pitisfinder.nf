@@ -76,6 +76,23 @@ process FILTER_FAA {
     """
 }
 
+process MERGE_ANNOTATIONS {
+    tag "$meta.id"
+    label 'process_single'
+
+    input:
+    tuple val(meta), path(amr), path(gbk)
+
+    output:
+    tuple val(meta), path("${meta.id}_merged.gbk"), emit: gbk
+
+    script:
+    def prefix = "${meta.id}"
+    """
+    merge_amr.py -t $amr -g $gbk -o "$prefix"_merged.gbk
+    """
+}
+
 workflow PITISFINDER {
 
     take:
@@ -85,10 +102,16 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // Channel solo con sample y fasta
-    ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+    ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
         return [ meta, fasta ]
     }
     .set { ch_fasta }
+
+    ch_samplesheet.map {  meta, fasta, faa, gbk, amr ->
+        return [ meta, amr, gbk ]
+    }.set {ch_mergeann}
+    ch_mergeann.view()
+    MERGE_ANNOTATIONS (ch_mergeann)
 
     //
     // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
@@ -135,8 +158,8 @@ workflow PITISFINDER {
             .join(COPLA_COPLA.out.ptu, by: [0, 1])
             .set { ch_coplajoint }
 
-        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-            return [ meta, gff, amr ]
+        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+            return [ meta, amr ]
             }.join(MOBSUITE_RECON.out.mobtyper_results)
             .set { ch_mobsample }
 
@@ -144,17 +167,16 @@ workflow PITISFINDER {
             .cross(ch_coplajoint)
             .map { mob, copla ->
                 def meta = mob[0]
-                def gff = mob[1]
-                def amr = mob[2]
-                def mob_typer = mob[3]
+                def amr = mob[1]
+                def mob_typer = mob[2]
                 def plasmid_name = copla[1]
                 def qry = copla[2]
                 def ptu = copla[3]
-                return [ meta, plasmid_name, qry, ptu, gff, amr, mob_typer ]
+                return [ meta, plasmid_name, qry, ptu, amr, mob_typer ]
             }
             .set { ch_plasmidparser }
 
-        PLASMID_PARSER (ch_plasmidparser)
+        // PLASMID_PARSER (ch_plasmidparser)
     }
 
     if ( !params.skip_integrons ) {
@@ -166,11 +188,11 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix( INTEGRONFINDER.out.versions )
         ch_integron_raw = INTEGRONFINDER.out.integrons
         // Process results
-        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-            return [ meta, fasta, gff, amr ]
+        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+            return [ meta, fasta, amr ]
             }.join(ch_integron_raw)
             .set { ch_merged }
-        INTEGRON_PARSER (ch_merged)
+        // INTEGRON_PARSER (ch_merged)
     }
 
     if ( !params.skip_is ) {
@@ -201,15 +223,15 @@ workflow PITISFINDER {
         //
         // PHIPSY
         //
-        ch_phispydb = Channel.value([])
-        if (params.phispy_db){
-            ch_phispydb = Channel.value(params.phispy_db)
-        }
-        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
-            return [ meta, gbk ]
-            }.set { ch_phispy }
-        PHISPY (ch_phispy, ch_phispydb)
-        ch_versions = ch_versions.mix( PHISPY.out.versions )
+        // ch_phispydb = Channel.value([])
+        // if (params.phispy_db){
+        //     ch_phispydb = Channel.value(params.phispy_db)
+        // }
+        // ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+        //     return [ meta, gbk ]
+        //     }.set { ch_phispy }
+        // PHISPY (ch_phispy, ch_phispydb)
+        // ch_versions = ch_versions.mix( PHISPY.out.versions )
 
         //
         // PHIGARO
@@ -259,7 +281,7 @@ workflow PITISFINDER {
         // ICEs (ESTO IRÁ A SUBWORKFLOW)
         //
         // MACSYFINDER
-        ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
             return [ meta, faa, gbk ]
         }.join(MOBSUITE_RECON.out.contig_report)
         .set { ch_msy_preproc }
@@ -287,7 +309,7 @@ workflow PITISFINDER {
         //
         // ICEFINDER2
         //
-        // ch_samplesheet.map { meta, fasta, gff, faa, gbk, amr ->
+        // ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
         //     return [ meta, gbk ]
         // }.set { ch_icefinder }
         // ICEFINDER2 ( ch_icefinder )
