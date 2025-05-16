@@ -110,8 +110,13 @@ workflow PITISFINDER {
     ch_samplesheet.map {  meta, fasta, faa, gbk, amr ->
         return [ meta, amr, gbk ]
     }.set {ch_mergeann}
-    ch_mergeann.view()
     MERGE_ANNOTATIONS (ch_mergeann)
+
+    ch_samplesheet
+        .join(MERGE_ANNOTATIONS.out.gbk)
+        .map {  meta, fasta, faa, gbk, amr, merged_gbk ->
+            return [ meta, fasta, faa, merged_gbk ]
+        }.set {ch_full}
 
     //
     // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
@@ -129,7 +134,6 @@ workflow PITISFINDER {
         //
         // PLASMIDFINDER (ch_fasta)
         // ch_versions = ch_versions.mix( PLASMIDFINDER.out.versions )
-
         // RENAME PLASMIDS
         // OJO! Ya no filtra por tamaño
         ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
@@ -158,25 +162,28 @@ workflow PITISFINDER {
             .join(COPLA_COPLA.out.ptu, by: [0, 1])
             .set { ch_coplajoint }
 
-        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
-            return [ meta, amr ]
-            }.join(MOBSUITE_RECON.out.mobtyper_results)
+        ch_full.map { meta, fasta, faa, gbk ->
+            return [ meta, gbk ]
+            }
+            .join(MOBSUITE_RECON.out.mobtyper_results)
+            .join(MOBSUITE_RECON.out.contig_report)
             .set { ch_mobsample }
 
         ch_mobsample
             .cross(ch_coplajoint)
             .map { mob, copla ->
                 def meta = mob[0]
-                def amr = mob[1]
+                def gbk = mob[1]
                 def mob_typer = mob[2]
+                def contig_report = mob[3]
                 def plasmid_name = copla[1]
                 def qry = copla[2]
                 def ptu = copla[3]
-                return [ meta, plasmid_name, qry, ptu, amr, mob_typer ]
+                return [ meta, plasmid_name, qry, ptu, gbk, mob_typer, contig_report ]
             }
             .set { ch_plasmidparser }
 
-        // PLASMID_PARSER (ch_plasmidparser)
+        PLASMID_PARSER (ch_plasmidparser)
     }
 
     if ( !params.skip_integrons ) {

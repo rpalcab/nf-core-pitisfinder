@@ -21,9 +21,15 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-m', '--mobsuite', required=True,
+        '-m', '--mobsuite_typer', required=True,
         type=Path,
         help="Required. mobtyper_results.txt file"
+    )
+
+    parser.add_argument(
+        '-r', '--mobsuite_report', required=True,
+        type=Path,
+        help="Required. contig_report.txt file"
     )
 
     parser.add_argument(
@@ -39,15 +45,9 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-a', '--ann_file', required=True,
+        '-g', '--gbk', required=True,
         type=Path,
-        help="Required. Annotation (.gff, .gff3) file to be processed"
-    )
-
-    parser.add_argument(
-        '-r', '--res_file', required=True,
-        type=Path,
-        help="Required. Resistance annotation file (.tab) to be processed"
+        help="Required. Annotation (.gbk, .gbff) file to be processed"
     )
 
     parser.add_argument(
@@ -71,17 +71,15 @@ def load_tsv(path: Path, **kwargs) -> pd.DataFrame:
         logging.error(f"Failed to read {path}: {e}")
         raise
 
-def extract_plasmid_row(df: pd.DataFrame, col: str, value: str) -> pd.Series:
-    parts = df[col].str.split(':', n=1, expand=True)
-    df[['sample', 'id']] = parts
-    filtered = df[df['id'] == value]
-    if filtered.empty:
-        raise ValueError(f"No records found for plasmid id '{value}' in {col}")
-    return filtered.iloc[0]
+def extract_plasmid_row(df: pd.DataFrame, value: str) -> pd.Series:
+    filtered = df[df['primary_cluster_id'] == value]
+    return filtered
 
-def build_info(mrow: pd.Series, qrow: pd.Series, prow: pd.Series) -> Dict[str, any]:
+def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List) -> Dict[str, any]:
     return {
-        'mobsuite_id': mrow['id'],
+        'sample': mrow['sample_id'],
+        'contig': ','.join(contigs),
+        'mobsuite_id': mrow['primary_cluster_id'],
         'ptu': prow.get('#Predicted_PTU'),
         'ptu_score': prow.get('Score'),
         'size': mrow.get('size'),
@@ -97,41 +95,64 @@ def build_info(mrow: pd.Series, qrow: pd.Series, prow: pd.Series) -> Dict[str, a
         'secondary_cluster_id': mrow.get('secondary_cluster_id'),
         'mash_neighbor_identification': mrow.get('mash_neighbor_identification'),
         'mash_neighbor_distance': mrow.get('mash_neighbor_distance'),
-        'AMR': qrow.get('AMR')
+        'AMR': ','.join(amr_genes)
     }
 
 def main():
     args = get_args()
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-
     # Output
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "plasmids_summary.tsv"
+    report_out = args.out_dir / f"{args.plasmid_name}.tsv"
+    gbk_out = args.out_dir / f"{args.plasmid_name}.gbk"
     pl_id = args.plasmid_name.split('_')[0]
 
     # Load tables
-    df_mobs = load_tsv(args.mobsuite)
+    df_mobt = load_tsv(args.mobsuite_typer)
+    parts = df_mobt['sample_id'].str.split(':', n=1, expand=True)
+    df_mobt[['sample_id', 'primary_cluster_id']] = parts
+    df_mobr = load_tsv(args.mobsuite_report)
     df_qry = load_tsv(args.qry_info)
     df_ptu = load_tsv(args.ptu)
     # df_res = load_tsv(args.res_file)
 
-    cols_keep = ['sample_id', 'size', 'rep_type(s)', 'relaxase_type(s)',
-                 'mpf_type', 'orit_type(s)', 'predicted_mobility',
-                 'primary_cluster_id', 'secondary_cluster_id',
-                 'mash_neighbor_distance', 'mash_neighbor_identification']
-    df_mobs = df_mobs[cols_keep]
+    mobt_filt = extract_plasmid_row(df_mobt, pl_id)
+    print(df_mobr)
+    mobr_filt = extract_plasmid_row(df_mobr, pl_id)
+    print(mobr_filt)
+    contigs = mobr_filt['contig_id'].tolist()
 
-    mrow = extract_plasmid_row(df_mobs, 'sample_id', pl_id)
     qrow = df_qry.iloc[0]
     prow = df_ptu.iloc[0]
 
-    info = build_info(mrow, qrow, prow)
+    # Save annotation (GBK)
+    selected_records = []
+    with args.gbk.open("r") as gbk_file:
+        for record in SeqIO.parse(gbk_file, "genbank"):
+            if record.id in contigs:
+                selected_records.append(record)
+
+    with gbk_out.open("w") as out_handle:
+        SeqIO.write(selected_records, out_handle, "genbank")
+    logging.info(f"Filtered GenBank file saved to: {gbk_out}")
+
+    # Retrieve AMR genes from GBK annotation
+    amr_genes = []
+    for record in selected_records:
+        for feature in record.features:
+            if feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', [""]):
+                gene_name = feature.qualifiers.get("gene", [""])[0]
+                amr_genes.append(gene_name)
+
+    # Retrieve report info
+    info = build_info(mobt_filt.iloc[0], contigs, qrow, prow, amr_genes)
     df_report = pd.DataFrame([info])
 
     # Save report
     df_report.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")
+
 
 if __name__ == "__main__":
     main()
