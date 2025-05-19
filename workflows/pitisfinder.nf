@@ -117,7 +117,7 @@ workflow PITISFINDER {
         .join(MERGE_ANNOTATIONS.out.gbk)
         .map {  meta, fasta, faa, gbk, amr, merged_gbk ->
             return [ meta, fasta, faa, merged_gbk ]
-        }.set {ch_full}
+        }.set { ch_full }
 
     //
     // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
@@ -197,11 +197,11 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix( INTEGRONFINDER.out.versions )
         ch_integron_raw = INTEGRONFINDER.out.integrons
         // Process results
-        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
-            return [ meta, fasta, amr ]
+        ch_full.map { meta, fasta, faa, gbk ->
+            return [ meta, gbk ]
             }.join(ch_integron_raw)
             .set { ch_merged }
-        // INTEGRON_PARSER (ch_merged)
+        INTEGRON_PARSER ( ch_merged )
     }
 
     if ( !params.skip_is ) {

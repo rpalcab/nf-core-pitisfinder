@@ -1,6 +1,10 @@
+name: visualizer
 channels:
+  - rwest
+  - vgauthier
   - conda-forge
   - bioconda
+  - defaults
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
@@ -99,6 +103,7 @@ dependencies:
   - pixman=0.46.0=h29eaf8c_0
   - pthread-stubs=0.4=hb9d3cd8_1002
   - pycirclize=1.9.1=pyhd8ed1ab_0
+  - pygenomeviz=1.6.1=pyhd8ed1ab_0
   - pyparsing=3.2.3=pyhd8ed1ab_1
   - pyside6=6.9.0=py313h5f61773_0
   - python=3.13.3=hf636f53_101_cp313
@@ -137,3 +142,4 @@ dependencies:
   - xorg-libxtst=1.2.5=hb9d3cd8_3
   - xorg-libxxf86vm=1.1.6=hb9d3cd8_0
   - zstd=1.5.7=hb8e6e7a_2
+prefix: /home/usuario/miniconda3/envs/visualizer

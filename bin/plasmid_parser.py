@@ -6,12 +6,10 @@ Script to parse plasmid information obtained from MOBrecon and COPLA, merged wit
 
 import pandas as pd
 from Bio import SeqIO
-from BCBio import GFF
-import re
 import argparse
 import logging
 from pathlib import Path
-from typing import Tuple, Dict, Any, Union, List
+from typing import Dict, List
 
 def get_args() -> argparse.Namespace:
 
