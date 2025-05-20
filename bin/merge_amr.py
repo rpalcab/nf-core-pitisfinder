@@ -16,7 +16,7 @@ def load_tab(tab_path):
     df['END'] = df['END'].astype(int)
     return df
 
-def annotate_record(record, df):
+def annotate_record(record, df, nts_diff):
     # select only tab hits for this contig (by SEQUENCE)
     df_rec = df[df['SEQUENCE'] == record.id]
     if df_rec.empty:
@@ -29,8 +29,8 @@ def annotate_record(record, df):
             new_features.append(feat)
             continue
         # existing CDS coords
-        fstart = int(feat.location.start) + 1
-        fend   = int(feat.location.end)
+        fstart = int(feat.location.start) + 1 + nts_diff
+        fend   = int(feat.location.end) - nts_diff
         # check overlap with any tab row
         overlap = False
         for _, row in df_rec.iterrows():
@@ -70,12 +70,12 @@ def annotate_record(record, df):
     record.features = source_feats + other_feats
     return record
 
-def main(tab, gbk, output):
+def main(tab, gbk, output, nts_diff):
     df = load_tab(tab)
     records = list(SeqIO.parse(gbk, 'genbank'))
     annotated = []
     for rec in records:
-        annotated.append(annotate_record(rec, df))
+        annotated.append(annotate_record(rec, df, nts_diff))
     SeqIO.write(annotated, output, 'genbank')
     print(f"Wrote annotated GenBank to {output}")
 
@@ -84,5 +84,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--tab', required=True, help='Path to abricate.tab file')
     parser.add_argument('-g', '--gbk', required=True, help='Path to input GenBank file')
     parser.add_argument('-o', '--output', default='annotated_output.gbk', help='Output GenBank path')
+    parser.add_argument('-n', '--nts_diff', default=15, help='Allowed N nucleotide overlapping (default: 15)')
     args = parser.parse_args()
-    main(args.tab, args.gbk, args.output)
+    main(args.tab, args.gbk, args.output, args.nts_diff)

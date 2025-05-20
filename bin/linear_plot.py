@@ -49,17 +49,17 @@ def main():
     features = gbk.extract_features(feature_type=['CDS', 'regulatory'])
     for feature in features:
         if feature.type == "CDS" and 'integrase' in feature.qualifiers.get('product', [''])[0].lower():
-            track.add_features(feature, label_type="gene", fc='blue')
+            track.add_features(feature, label_type="gene", fc='blue', lw=1.0)
         elif feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', [''])[0]:
-            track.add_features(feature, hatch='//', fc='orange', label_type="gene")
+            track.add_features(feature, hatch='//', fc='orange', label_type="gene", lw=1.0)
         elif feature.type == "CDS" and 'hypothetical' in feature.qualifiers.get('product', [''])[0].lower():
-            track.add_features(feature, label_type="gene", fc='grey')
+            track.add_features(feature, label_type="gene", fc='grey', lw=1.0)
         elif feature.type == "CDS":
-            track.add_features(feature, label_type="gene", fc='orange')
+            track.add_features(feature, label_type="gene", fc='orange', lw=1.0)
         elif feature.type == "regulatory":
             if 'atti' in feature.qualifiers.get('note', [''])[0].lower():
                 feature.qualifiers['note'] = ['attI']
-            track.add_features(feature, label_type="note", fc='green')
+            track.add_features(feature, label_type="note", fc='green', lw=1.0)
 
     # GCskew and content
     fig = gv.plotfig()

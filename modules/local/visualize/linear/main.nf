@@ -11,7 +11,7 @@ process VISUALIZE_LINEAR {
     tuple val(meta), val(integron), path(gbk)
 
     output:
-    tuple val(meta), val(integron), path("*.png"), emit: png
+    tuple val(meta), val(integron), path("${meta.id}/*.png"), emit: png
     //path "versions.yml"           , emit: versions
 
     when:
@@ -21,7 +21,8 @@ process VISUALIZE_LINEAR {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    linear_plot.py -i $gbk -o ${integron.id}.png
+    mkdir $prefix/
+    linear_plot.py -i $gbk -o $prefix/${integron.id}.png
     """
 
     stub:

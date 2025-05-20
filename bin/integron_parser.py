@@ -82,7 +82,7 @@ def extract_region_with_attC(input_gbk: Path, contig_id: str, start: int, end: i
         cds_names_list = []
         amr_list = []
         for feature in record.features:
-            if feature.location.end <= start or feature.location.start >= end:
+            if feature.location.end > end + 50 or feature.location.start < start - 50:
                 continue
 
             new_start = max(feature.location.start, start) - start
