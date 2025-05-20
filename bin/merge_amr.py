@@ -22,47 +22,47 @@ def annotate_record(record, df):
     if df_rec.empty:
         return record
 
+    # Remove any existing CDS features that overlap any tab region
+    new_features = []
+    for feat in record.features:
+        if feat.type != 'CDS':
+            new_features.append(feat)
+            continue
+        # existing CDS coords
+        fstart = int(feat.location.start) + 1
+        fend   = int(feat.location.end)
+        # check overlap with any tab row
+        overlap = False
+        for _, row in df_rec.iterrows():
+            if not (fend < row['START'] or fstart > row['END']):
+                overlap = True
+                break
+        if not overlap:
+            new_features.append(feat)
+    record.features = new_features
+
+    # Add/overwrite features from tab (prioritized)
     for _, row in df_rec.iterrows():
-        matched = False
-        for feat in record.features:
-            if feat.type != 'CDS':
-                continue
-            # Biopython 0-based start, GenBank 1-based
-            feat_start = int(feat.location.start) + 1
-            feat_end = int(feat.location.end)
-            feat_strand = '+' if feat.location.strand == 1 else '-'
-            # match coords
-            if feat_start == row['START'] and feat_end == row['END'] and feat_strand == row['STRAND']:
-                matched = True
-                # add or overwrite qualifiers
-                feat.qualifiers['tag'] = ['AMR']
-                feat.qualifiers['gene'] = [row['GENE']]
-                feat.qualifiers['product'] = [row['PRODUCT']]
-                inf = f"Abricate prediction, id% {row['%IDENTITY']}, qcov% {row['%COVERAGE']} to {row['ACCESSION']}"
-                feat.qualifiers['inference'] = [inf]
-                feat.qualifiers['resistance'] = [row['RESISTANCE']]
-        if not matched:
-            # create a new CDS feature
-            strand_val = 1 if row['STRAND'] == '+' else -1
-            loc = FeatureLocation(row['START']-1, row['END'], strand=strand_val)
-            # translate sequence segment
-            seq_segment = record.seq[loc.start:loc.end]
-            translation = str(seq_segment.translate(table=11, to_stop=True))
-            qualifiers = {
-                'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}"],
-                'product': [row['PRODUCT']],
-                'locus_tag': [f"{row['ACCESSION']}_{row['START']}_{row['END']}"],
-                'protein_id': [f"gnl|Abricate|{row['ACCESSION']}_{row['START']}_{row['END']}"],
-                'tag': ['AMR'],
-                'translation': [translation],
-                'codon_start': ['1'],
-                'transl_table': ['11'],
-                'inference': [f"Abricate prediction, id% {row['%IDENTITY']}, qcov% {row['%COVERAGE']} to {row['ACCESSION']}"],
-                'gene': [row['GENE']],
-                'resistance': [row['RESISTANCE']]
-            }
-            new_feat = SeqFeature(location=loc, type='CDS', qualifiers=qualifiers)
-            record.features.append(new_feat)
+        strand_val = 1 if row['STRAND'] == '+' else -1
+        loc = FeatureLocation(row['START'] - 1, row['END'], strand=strand_val)
+        seq_segment = record.seq[loc.start:loc.end]
+        translation = str(seq_segment.translate(table=11, to_stop=True))
+        qualifiers = {
+            'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}]"],
+            'product': [row['PRODUCT']],
+            'locus_tag': [f"{row['ACCESSION']}_{row['START']}_{row['END']}"],
+            'protein_id': [f"gnl|Abricate|{row['ACCESSION']}_{row['START']}_{row['END']}"],
+            'tag': ['AMR'],
+            'translation': [translation],
+            'codon_start': ['1'],
+            'transl_table': ['11'],
+            'inference': [f"Abricate prediction, id% {row['%IDENTITY']}, qcov% {row['%COVERAGE']} to {row['ACCESSION']}"],
+            'gene': [row['GENE']],
+            'resistance': [row['RESISTANCE']]
+        }
+        new_feat = SeqFeature(location=loc, type='CDS', qualifiers=qualifiers)
+        record.features.append(new_feat)
+
     # reorder features: keep 'source' first, then CDS (and other) sorted by start
     source_feats = [f for f in record.features if f.type == 'source']
     other_feats = [f for f in record.features if f.type != 'source']
