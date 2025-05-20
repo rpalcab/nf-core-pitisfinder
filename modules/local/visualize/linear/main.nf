@@ -1,4 +1,4 @@
-process VISUALIZE {
+process VISUALIZE_LINEAR {
     tag "$meta.id"
     label 'process_single'
 
@@ -8,10 +8,10 @@ process VISUALIZE {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(plasmid_name), path(gbk)
+    tuple val(meta), val(integron), path(gbk)
 
     output:
-    tuple val(meta), val(plasmid_name), path("*.png"), emit: bam
+    tuple val(meta), val(integron), path("*.png"), emit: png
     //path "versions.yml"           , emit: versions
 
     when:
@@ -21,13 +21,13 @@ process VISUALIZE {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    circos_plot.py -i $gbk -o ${plasmid_name}.png
+    linear_plot.py -i $gbk -o ${integron.id}.png
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${plasmid_name}.png
+    touch ${integron.id}.png
     """
 }

@@ -11,9 +11,9 @@ process INTEGRON_PARSER {
 
     output:
     tuple val(meta), path("${meta.id}/integrons_summary.tsv"), emit: report, optional: true
-    tuple val(meta), path("${meta.id}/int_*.fasta"), emit: fastas, optional: true
-    tuple val(meta), path("${meta.id}/int_*.tsv"), emit: tsvs, optional: true
-    tuple val(meta), path("${meta.id}/int_*.gbk"), emit: gbks, optional: true
+    tuple val(meta), path("${meta.id}/int_*.fasta"), emit: fasta, optional: true
+    tuple val(meta), path("${meta.id}/int_*.tsv"), emit: tsv, optional: true
+    tuple val(meta), path("${meta.id}/int_*.gbk"), emit: gbk, optional: true
     when:
     task.ext.when == null || task.ext.when
 

@@ -12,13 +12,14 @@ include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
 include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
 include { PLASMID_PARSER              } from '../modules/local/plasmidparser/main'
-include { VISUALIZE                   } from '../modules/local/visualize/main'
+include { VISUALIZE_CIRCULAR          } from '../modules/local/visualize/circular/main'
 // include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
 // include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA                 } from '../modules/local/copla/copla/main'
 include { INTEGRONFINDER              } from '../modules/local/integronfinder/main'
 include { INTEGRON_PARSER             } from '../modules/local/integronparser/main'
+include { VISUALIZE_LINEAR            } from '../modules/local/visualize/linear/main'
 include { IS_BLAST                    } from '../modules/local/isblast/main'
 include { IS_PARSER                   } from '../modules/local/isparser/main'
 include { ISESCAN                     } from '../modules/local/isescan/main'
@@ -185,7 +186,7 @@ workflow PITISFINDER {
             .set { ch_plasmidparser }
 
         PLASMID_PARSER (ch_plasmidparser)
-        VISUALIZE (PLASMID_PARSER.out.gbk)
+        VISUALIZE_CIRCULAR (PLASMID_PARSER.out.gbk)
     }
 
     if ( !params.skip_integrons ) {
@@ -202,6 +203,23 @@ workflow PITISFINDER {
             }.join(ch_integron_raw)
             .set { ch_merged }
         INTEGRON_PARSER ( ch_merged )
+
+        INTEGRON_PARSER.out.gbk
+            .flatMap { meta, gbk_files ->
+            if (gbk_files instanceof List) {
+                // If gbk_files is a list, process each file
+                return gbk_files.collect { gbk_file ->
+                    def int_meta = [id: gbk_file.name.tokenize('.')[0]]
+                    [meta, int_meta, gbk_file]
+                }
+            } else {
+                // If gbk_files is a single file, process it directly
+                def int_meta = [id: gbk_files.name.tokenize('.')[0]]
+                return [[meta, int_meta, gbk_files]]
+            }
+        }.set { ch_vislin }
+
+        VISUALIZE_LINEAR (ch_vislin)
     }
 
     if ( !params.skip_is ) {
