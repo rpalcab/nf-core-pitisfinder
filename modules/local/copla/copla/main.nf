@@ -12,10 +12,10 @@ process COPLA_COPLA {
     path (copladb)
 
     output:
-    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/"), emit: results
-    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/*.qry_info.tsv"), emit: query
-    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/*.ptu_prediction.tsv"), emit: ptu
-    tuple val(meta), val(plasmid_name), path("${meta.id}/$plasmid_name/copla.txt"), emit: log
+    // tuple val(meta), val(plasmid_name), path("$plasmid_name/"), emit: results
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.qry_info.tsv"), emit: query
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.ptu_prediction.tsv"), emit: ptu
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/copla.txt"), emit: log
     path "versions.yml", emit: versions
 
     when:
@@ -25,13 +25,13 @@ process COPLA_COPLA {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir -p ${prefix}/${plasmid_name}
+    mkdir ${plasmid_name}
 
     copla \\
          "$file" \\
          "${copladb}/Copla_RS84/RS84f_sHSBM.pickle" \\
          "${copladb}/Copla_RS84/CoplaDB.fofn" \\
-         ${prefix}/${plasmid_name} > ${prefix}/${plasmid_name}/copla.txt
+         ${plasmid_name} > ${plasmid_name}/copla.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -41,8 +41,10 @@ process COPLA_COPLA {
 
     stub:
     """
-    mkdir -p ${meta.id}/
-    touch ${meta.id}/copla.txt
+    mkdir ${plasmid_name}
+    touch ${plasmid_name}/copla.txt
+    touch ${plasmid_name}/stub.ptu_prediction.tsv
+    touch ${plasmid_name}/stub.qry_info.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -12,17 +12,17 @@ process PHISPY {
     path dbfile
 
     output:
-    tuple val(meta), path("${prefix}/${prefix}.tsv")                     , emit: coordinates
-    tuple val(meta), path("${prefix}/${prefix}.gb*")                     , emit: gbk
-    tuple val(meta), path("${prefix}/${prefix}.log")                     , emit: log
-    tuple val(meta), path("${prefix}/${prefix}_prophage_information.tsv"), optional:true, emit: information
-    tuple val(meta), path("${prefix}/${prefix}_bacteria.fasta")          , optional:true, emit: bacteria_fasta
-    tuple val(meta), path("${prefix}/${prefix}_bacteria.gbk")            , optional:true, emit: bacteria_gbk
-    tuple val(meta), path("${prefix}/${prefix}_phage.fasta")             , optional:true, emit: phage_fasta
-    tuple val(meta), path("${prefix}/${prefix}_phage.gbk")               , optional:true, emit: phage_gbk
-    tuple val(meta), path("${prefix}/${prefix}_prophage.gff3")           , optional:true, emit: prophage_gff
-    tuple val(meta), path("${prefix}/${prefix}_prophage.tbl")            , optional:true, emit: prophage_tbl
-    tuple val(meta), path("${prefix}/${prefix}_prophage.tsv")            , optional:true, emit: prophage_tsv
+    tuple val(meta), path("${meta.id}_prophage_coordinates.tsv"), emit: coordinates
+    tuple val(meta), path("${meta.id}_${gbk}")                  , emit: gbk
+    tuple val(meta), path("${meta.id}_phispy.log")              , emit: log
+    tuple val(meta), path("${meta.id}_prophage_information.tsv"), optional:true, emit: information
+    tuple val(meta), path("${meta.id}_bacteria.fasta")          , optional:true, emit: bacteria_fasta
+    tuple val(meta), path("${meta.id}_bacteria.gbk")            , optional:true, emit: bacteria_gbk
+    tuple val(meta), path("${meta.id}_phage.fasta")             , optional:true, emit: phage_fasta
+    tuple val(meta), path("${meta.id}_phage.gbk")               , optional:true, emit: phage_gbk
+    tuple val(meta), path("${meta.id}_prophage.gff3")           , optional:true, emit: prophage_gff
+    tuple val(meta), path("${meta.id}_prophage.tbl")            , optional:true, emit: prophage_tbl
+    tuple val(meta), path("${meta.id}_prophage.tsv")            , optional:true, emit: prophage_tsv
     path "versions.yml"                                        , emit: versions
 
     when:
@@ -44,15 +44,11 @@ process PHISPY {
         $args \\
         --threads $task.cpus \\
         -p $prefix \\
-        -o $prefix \\
+        -o . \\
         $gbk
 
-    mv ${prefix}/${prefix}_prophage_coordinates.tsv ${prefix}/${prefix}.tsv
-    mv ${prefix}/${prefix}_${gbk} ${prefix}/${prefix}${gbk_extension}
-    mv ${prefix}/${prefix}_phispy.log ${prefix}/${prefix}.log
-
     # Adds header to tsv file
-    sed -i '1s/^/Prophage_number\\tContig\\tStart_phage\\tEnd_phage\\tStart_attl\\tEnd_attl\\tStart_attr\\tEnd_attr\\tSeq_attl\\tSeq_attr\\tComment\\n/' ${prefix}/${prefix}.tsv
+    sed -i '1s/^/Prophage_number\\tContig\\tStart_phage\\tEnd_phage\\tStart_attl\\tEnd_attl\\tStart_attr\\tEnd_attr\\tSeq_attl\\tSeq_attr\\tComment\\n/' ${prefix}_prophage_coordinates.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -67,18 +63,17 @@ process PHISPY {
     if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
 
     """
-    mkdir ${prefix}/
-    touch ${prefix}/${prefix}.tsv
-    touch ${prefix}/${prefix}${gbk_extension}
-    touch ${prefix}/${prefix}.log
-    touch ${prefix}/${prefix}_prophage_information.tsv
-    touch ${prefix}/${prefix}_bacteria.fasta
-    touch ${prefix}/${prefix}_bacteria.gbk
-    touch ${prefix}/${prefix}_phage.fasta
-    touch ${prefix}/${prefix}_phage.gbk
-    touch ${prefix}/${prefix}_prophage.gff3
-    touch ${prefix}/${prefix}_prophage.tbl
-    touch ${prefix}/${prefix}_prophage.tsv
+    touch ${prefix}.tsv
+    touch ${prefix}${gbk_extension}
+    touch ${prefix}.log
+    touch ${prefix}_prophage_information.tsv
+    touch ${prefix}_bacteria.fasta
+    touch ${prefix}_bacteria.gbk
+    touch ${prefix}_phage.fasta
+    touch ${prefix}_phage.gbk
+    touch ${prefix}_prophage.gff3
+    touch ${prefix}_prophage.tbl
+    touch ${prefix}_prophage.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

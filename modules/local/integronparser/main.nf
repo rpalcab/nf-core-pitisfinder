@@ -10,17 +10,17 @@ process INTEGRON_PARSER {
     tuple val(meta), path(gbk), path(integrons)
 
     output:
-    tuple val(meta), path("${meta.id}/integrons_summary.tsv"), emit: report, optional: true
-    tuple val(meta), path("${meta.id}/int_*.fasta"), emit: fasta, optional: true
-    tuple val(meta), path("${meta.id}/int_*.tsv"), emit: tsv, optional: true
-    tuple val(meta), path("${meta.id}/int_*.gbk"), emit: gbk, optional: true
+    tuple val(meta), path("integrons_summary.tsv"), emit: report, optional: true
+    tuple val(meta), path("int_*.fasta"), emit: fasta, optional: true
+    tuple val(meta), path("int_*.tsv"), emit: tsv, optional: true
+    tuple val(meta), path("int_*.gbk"), emit: gbk, optional: true
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def prefix = "${meta.id}"
     """
-    integron_parser.py -i $integrons -a $gbk -o ${prefix}
+    integron_parser.py -i $integrons -a $gbk -o .
     """
 
     stub:

@@ -24,8 +24,7 @@ process PLASMID_PARSER {
 
     stub:
     """
-    mkdir ${prefix}
-    touch ${prefix}/${plasmid_name}.tsv
-    touch ${prefix}/${plasmid_name}.gbk
+    touch ${plasmid_name}.tsv
+    touch ${plasmid_name}.gbk
     """
 }

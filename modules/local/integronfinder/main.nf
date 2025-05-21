@@ -11,11 +11,11 @@ process INTEGRONFINDER {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${meta.id}/${meta.id}.integrons"), emit: integrons
-    tuple val(meta), path("${meta.id}/${meta.id}.summary")  , emit: summary
-    tuple val(meta), path("${meta.id}/integron_finder.out") , emit: log         , optional: true
-    tuple val(meta), path("${meta.id}/*.gbk")               , emit: gbk         , optional: true
-    tuple val(meta), path("${meta.id}/*.pdf")               , emit: pdf         , optional: true
+    tuple val(meta), path("${meta.id}.integrons"), emit: integrons
+    tuple val(meta), path("${meta.id}.summary")  , emit: summary
+    tuple val(meta), path("integron_finder.out") , emit: log         , optional: true
+    tuple val(meta), path("*.gbk")               , emit: gbk         , optional: true
+    tuple val(meta), path("*.pdf")               , emit: pdf         , optional: true
     path "versions.yml"                                     , emit: versions
 
     when:
@@ -29,9 +29,9 @@ process INTEGRONFINDER {
                 $fasta \\
                 $args \\
                 --cpu $task.cpus \\
-                --outdir ${prefix}
-    mv ${prefix}/Results_Integron_Finder_${prefix}/* ${prefix}/
-    rmdir ${prefix}/Results_Integron_Finder_${prefix}/
+                --outdir .
+    mv Results_Integron_Finder_${prefix}/* .
+    rmdir Results_Integron_Finder_${prefix}/
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -43,9 +43,8 @@ process INTEGRONFINDER {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir -p ${prefix}
-    touch ${prefix}/${prefix}.integrons
-    touch ${prefix}/${prefix}.summary"
+    touch ${prefix}.integrons
+    touch ${prefix}.summary"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

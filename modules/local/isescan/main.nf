@@ -11,11 +11,11 @@ process ISESCAN {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${meta.id}/*.tsv")   , emit: tsv, optional: true
-    tuple val(meta), path("${meta.id}/*.gff")   , emit: gff, optional: true
-    tuple val(meta), path("${meta.id}/*.is.fna"), emit: isfna, optional: true
-    tuple val(meta), path("${meta.id}/*.orf.fna"), emit: orffna, optional: true
-    tuple val(meta), path("${meta.id}/*.orf.faa"), emit: orffaa, optional: true
+    tuple val(meta), path("*.tsv")   , emit: tsv, optional: true
+    tuple val(meta), path("*.gff")   , emit: gff, optional: true
+    tuple val(meta), path("*.is.fna"), emit: isfna, optional: true
+    tuple val(meta), path("*.orf.fna"), emit: orffna, optional: true
+    tuple val(meta), path("*.orf.faa"), emit: orffaa, optional: true
     path "versions.yml"                          , emit: versions
 
     when:
@@ -28,7 +28,7 @@ process ISESCAN {
     isescan.py \\
         $args \\
         --nthread $task.cpus \\
-        --output $prefix \\
+        --output . \\
         --seqfile $fasta
 
     cat <<-END_VERSIONS > versions.yml
@@ -41,8 +41,6 @@ process ISESCAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir $prefix
-
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         isescan: \$(isescan.py --version |& sed '1!d ; s/isescan //')
