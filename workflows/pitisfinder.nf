@@ -250,31 +250,31 @@ workflow PITISFINDER {
         //
         // PHIPSY
         //
-        // ch_phispydb = Channel.value([])
-        // if (params.phispy_db){
-        //     ch_phispydb = Channel.value(params.phispy_db)
-        // }
-        // ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
-        //     return [ meta, gbk ]
-        //     }.set { ch_phispy }
-        // PHISPY (ch_phispy, ch_phispydb)
-        // ch_versions = ch_versions.mix( PHISPY.out.versions )
+        ch_phispydb = Channel.value([])
+        if (params.phispy_db){
+            ch_phispydb = Channel.value(params.phispy_db)
+        }
+        ch_full.map { meta, fasta, faa, gbk ->
+            return [ meta, gbk ]
+            }.set { ch_phispy }
+        PHISPY (ch_phispy, ch_phispydb)
+        ch_versions = ch_versions.mix( PHISPY.out.versions )
 
-        //
-        // PHIGARO
-        //
-        ch_phigaro_setup = params.phigaro_db ? Channel.fromPath(params.phigaro_db).map{ it -> [it] } : Channel.of([])
-        PHIGARO_SETUP(ch_phigaro_setup)
-        // Create value channels for db and config
-        ch_db = PHIGARO_SETUP.out.pvog.first()
-        ch_config = PHIGARO_SETUP.out.config.first()
+        // //
+        // // PHIGARO
+        // //
+        // ch_phigaro_setup = params.phigaro_db ? Channel.fromPath(params.phigaro_db).map{ it -> [it] } : Channel.of([])
+        // PHIGARO_SETUP(ch_phigaro_setup)
+        // // Create value channels for db and config
+        // ch_db = PHIGARO_SETUP.out.pvog.first()
+        // ch_config = PHIGARO_SETUP.out.config.first()
 
-        PHIGARO(
-            ch_fasta,
-            ch_db,
-            ch_config
-        )
-        ch_versions = ch_versions.mix( PHIGARO.out.versions )
+        // PHIGARO(
+        //     ch_fasta,
+        //     ch_db,
+        //     ch_config
+        // )
+        // ch_versions = ch_versions.mix( PHIGARO.out.versions )
 
         //
         // PHASTEST
