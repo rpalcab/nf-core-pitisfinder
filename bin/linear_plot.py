@@ -36,11 +36,15 @@ def main():
     args = get_args()
     gbk = Genbank(args.input)
 
+
+    print(gbk.records[0].id)
+
+
     #Data setup
     gv = GenomeViz(fig_track_height=0.7, feature_track_ratio=0.5, track_align_type="center")
     gv.set_scale_bar(ymargin=0.5)
 
-    track = gv.add_feature_track(gbk.name, gbk.get_seqid2size(), align_label=False)
+    track = gv.add_feature_track(gbk.records[0].id, gbk.get_seqid2size(), align_label=False)
     track.add_subtrack(name="GCcontent", ylim=(0, 100))
     track.add_subtrack(name="GCskew", ylim=(-1, 1))
     track.add_sublabel()
@@ -67,7 +71,7 @@ def main():
     step_size = 50
     gc_content_subtrack = track.get_subtrack("GCcontent")
     gc_skew_subtrack = track.get_subtrack("GCskew")
-    seq = gbk.get_seqid2seq()[gbk.name]
+    seq = gbk.get_seqid2seq()[gbk.records[0].id]
     x, gc_content = gbk.calc_gc_content(window_size=win_size, step_size=step_size, seq=seq)
     x = track.segments[0].transform_coord(x)
     gc_content_subtrack.ax.fill_between(x, gc_content, color="grey")

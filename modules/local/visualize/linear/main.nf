@@ -21,7 +21,6 @@ process VISUALIZE_LINEAR {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir $prefix/
     linear_plot.py -i $gbk -o ${integron.id}.png
     """
 

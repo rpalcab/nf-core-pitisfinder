@@ -109,7 +109,53 @@ process PLASMID_SUMMARY {
     def prefix = "${meta.id}"
     """
     echo -e "Contig\tStart\tEnd\tName\tAMR" > plasmid_summary.tsv
-    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, 1, \$4, \$2":"\$3, \$5}' >> plasmid_summary.tsv
+    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
+    """
+}
+
+process PROCESS_PHISPY {
+    tag "$meta.id"
+    label 'process_single'
+
+    input:
+    tuple val(meta), path(gbk)
+    tuple val(meta), path(fasta)
+    tuple val(meta), path(tsv)
+
+    output:
+    tuple val(meta), path("pp_*_${meta.id}.gbk"), emit: gbk
+    tuple val(meta), path("pp_*_${meta.id}.fasta"), emit: fasta
+    tuple val(meta), path("pp_*_${meta.id}.png"), emit: png
+    tuple val(meta), path("prophage_summary.tsv"), emit: summary
+
+    script:
+    def prefix = "${meta.id}"
+    """
+    # Split gbk into individual prophages
+    csplit -z $gbk /^LOCUS/ '{*}' -f tmp_pp_ -b %d_${prefix}.gbk
+    # Rename gbk files starting from 1
+    n=1
+    for file in \$(ls tmp_pp_*_${prefix}.gbk | sort -V); do
+        newname=\$(printf "pp_%d_${prefix}.gbk" "\$n")
+        mv "\$file" "\$newname"
+        linear_plot.py -i \$newname -o \${newname%.*}.png
+        n=\$((n + 1))
+    done
+
+    # Split fasta into individual prophages
+    csplit -z $fasta /^\\>/ '{*}' -f tmp_pp_ -b %d_${prefix}.fasta
+    # Rename fasta files starting from 1
+    n=1
+    for file in \$(ls tmp_pp_*_${prefix}.fasta | sort -V); do
+        echo \$file
+        newname=\$(printf "pp_%d_${prefix}.fasta" "\$n")
+        mv "\$file" "\$newname"
+        n=\$((n + 1))
+    done
+
+    # Format summary table
+    awk -v s="$prefix" 'NR==1 {print \$0; next} { \$1 = \$1 "_" s; print }' OFS='\\t' $tsv > prophage_summary.tsv
+    sed -i -e 's/Prophage number/Name/' -e 's/Stop/End/' prophage_summary.tsv
     """
 }
 
@@ -120,7 +166,10 @@ workflow PITISFINDER {
     main:
 
     ch_versions = Channel.empty()
-    ch_summary = Channel.empty()
+    ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+        return [ meta, [] ]
+    }
+    .set { ch_summary }
 
     // Channel solo con sample y fasta
     ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
@@ -130,7 +179,7 @@ workflow PITISFINDER {
 
     ch_samplesheet.map {  meta, fasta, faa, gbk, amr ->
         return [ meta, amr, gbk ]
-    }.set {ch_mergeann}
+    }.set { ch_mergeann }
     MERGE_ANNOTATIONS (ch_mergeann)
 
     ch_samplesheet
@@ -217,6 +266,11 @@ workflow PITISFINDER {
 
         PLASMID_SUMMARY ( ch_plasmidsummary )
         VISUALIZE_CIRCULAR (PLASMID_PARSER.out.gbk)
+        ch_summary = ch_summary
+                        .join(PLASMID_SUMMARY.out.summary)
+                        .map { meta, file_list, summary ->
+                            [meta, file_list + [summary]]
+                    }
     }
 
     if ( !params.skip_integrons ) {
@@ -233,6 +287,11 @@ workflow PITISFINDER {
             }.join(ch_integron_raw)
             .set { ch_merged }
         INTEGRON_PARSER ( ch_merged )
+        ch_summary = ch_summary
+                        .join(INTEGRON_PARSER.out.summary)
+                        .map { meta, file_list, summary ->
+                            [meta, file_list + [summary]]
+                    }
 
         INTEGRON_PARSER.out.gbk
             .flatMap { meta, gbk_files ->
@@ -274,6 +333,11 @@ workflow PITISFINDER {
         // }
         ISESCAN (ch_is_input)
         ch_versions = ch_versions.mix( ISESCAN.out.versions )
+        ch_summary = ch_summary
+                        .join(ISESCAN.out.summary)
+                        .map { meta, file_list, summary ->
+                            [meta, file_list + [summary]]
+                    }
     }
 
     if ( !params.skip_prophages ) {
@@ -290,6 +354,26 @@ workflow PITISFINDER {
         PHISPY (ch_phispy, ch_phispydb)
         ch_versions = ch_versions.mix( PHISPY.out.versions )
 
+        PROCESS_PHISPY (PHISPY.out.phage_gbk, PHISPY.out.phage_fasta, PHISPY.out.prophage_tsv)
+        PROCESS_PHISPY.out.gbk
+            .flatMap { meta, gbk_files ->
+            if (gbk_files instanceof List) {
+                // If gbk_files is a list, process each file
+                return gbk_files.collect { gbk_file ->
+                    def pp_meta = [id: gbk_file.name.tokenize('.')[0]]
+                    [meta, pp_meta, gbk_file]
+                }
+            } else {
+                // If gbk_files is a single file, process it directly
+                def pp_meta = [id: gbk_files.name.tokenize('.')[0]]
+                return [[meta, pp_meta, gbk_files]]
+            }
+        }.set { ch_pplin }
+        ch_summary = ch_summary
+                        .join(PROCESS_PHISPY.out.summary)
+                        .map { meta, file_list, summary ->
+                            [meta, file_list + [summary]]
+                    }
         // //
         // // PHIGARO
         // //
@@ -382,7 +466,6 @@ workflow PITISFINDER {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
-
 
     emit:
     versions       = ch_versions                 // channel: [ path(versions.yml) ]

@@ -32,7 +32,8 @@ process ISESCAN {
         --output . \\
         --seqfile $fasta
 
-    cut -f 1,3-5 ${fasta}.tsv | sed -e 's/seqID/Contig/' -e 's/cluster/Name/' -e 's/isBegin/Start/' -e 's/isEnd/End/' > IS_summary.tsv
+    cut -f 1,3-5 ${fasta}.tsv | awk -F'\\t' 'BEGIN {OFS="\\t"} NR==1 {print \$0, "AMR"; next} {print \$0, ""}' | sed -e 's/seqID/Contig/' -e 's/cluster/Name/' -e 's/isBegin/Start/' -e 's/isEnd/End/' > IS_summary.tsv
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
