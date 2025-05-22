@@ -34,6 +34,7 @@ include { ICEBERG_DB_DOWNLOAD         } from '../modules/local/iceberg/dbdownloa
 include { ICEBERG_ICESEARCH           } from '../modules/local/iceberg/icesearch/main'
 include { ICEBERG_FILTER              } from '../modules/local/iceberg/icefilter/main'
 include { ICEFINDER2                  } from '../modules/local/icefinder2/main'
+include { SAMPLESUMMARY               } from '../modules/local/samplesummary/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +109,7 @@ process PLASMID_SUMMARY {
     script:
     def prefix = "${meta.id}"
     """
-    echo -e "Contig\tStart\tEnd\tName\tAMR" > plasmid_summary.tsv
+    echo -e "Contig\tName\tStart\tEnd\tAMR" > plasmid_summary.tsv
     tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
     """
 }
@@ -267,9 +268,9 @@ workflow PITISFINDER {
         PLASMID_SUMMARY ( ch_plasmidsummary )
         VISUALIZE_CIRCULAR (PLASMID_PARSER.out.gbk)
         ch_summary = ch_summary
-                        .join(PLASMID_SUMMARY.out.summary)
+                        .join(PLASMID_SUMMARY.out.summary, remainder: true)
                         .map { meta, file_list, summary ->
-                            [meta, file_list + [summary]]
+                            summary ? [meta, file_list + [summary]] : [meta, file_list]
                     }
     }
 
@@ -288,9 +289,9 @@ workflow PITISFINDER {
             .set { ch_merged }
         INTEGRON_PARSER ( ch_merged )
         ch_summary = ch_summary
-                        .join(INTEGRON_PARSER.out.summary)
+                        .join(INTEGRON_PARSER.out.summary, remainder: true)
                         .map { meta, file_list, summary ->
-                            [meta, file_list + [summary]]
+                            summary ? [meta, file_list + [summary]] : [meta, file_list]
                     }
 
         INTEGRON_PARSER.out.gbk
@@ -315,12 +316,12 @@ workflow PITISFINDER {
         //
         // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
         //
-        ch_is_input = Channel.empty()
-        if ( !params.skip_plasmids ) {
-            ch_is_input = ch_mobsuite_chr
-        } else {
-            ch_is_input = ch_fasta
-        }
+        // ch_is_input = Channel.empty()
+        // if ( !params.skip_plasmids ) {
+        //     ch_is_input = ch_mobsuite_chr
+        // } else {
+        //     ch_is_input = ch_fasta
+        // }
         // ch_isdb = Channel.empty()
         // if (params.is_db){
         //     ch_isdb = Channel.value(params.is_db)
@@ -331,12 +332,12 @@ workflow PITISFINDER {
         //     ch_raw_is = IS_BLAST.out.report
         //     IS_PARSER (ch_raw_is)
         // }
-        ISESCAN (ch_is_input)
+        ISESCAN (ch_fasta)
         ch_versions = ch_versions.mix( ISESCAN.out.versions )
         ch_summary = ch_summary
-                        .join(ISESCAN.out.summary)
+                        .join(ISESCAN.out.summary, remainder: true)
                         .map { meta, file_list, summary ->
-                            [meta, file_list + [summary]]
+                            summary ? [meta, file_list + [summary]] : [meta, file_list]
                     }
     }
 
@@ -370,9 +371,9 @@ workflow PITISFINDER {
             }
         }.set { ch_pplin }
         ch_summary = ch_summary
-                        .join(PROCESS_PHISPY.out.summary)
+                        .join(PROCESS_PHISPY.out.summary, remainder: true)
                         .map { meta, file_list, summary ->
-                            [meta, file_list + [summary]]
+                            summary ? [meta, file_list + [summary]] : [meta, file_list]
                     }
         // //
         // // PHIGARO
@@ -456,6 +457,13 @@ workflow PITISFINDER {
         // ICEFINDER2 ( ch_icefinder )
         // ch_versions = ch_versions.mix( ICEFINDER2.out.versions )
     }
+
+    ch_summary.join( MERGE_ANNOTATIONS.out.gbk )
+              .set { ch_samplesummary }
+
+    SAMPLESUMMARY(ch_samplesummary)
+
+
     //
     // Collate and save software versions
     //
@@ -466,6 +474,7 @@ workflow PITISFINDER {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
+
 
     emit:
     versions       = ch_versions                 // channel: [ path(versions.yml) ]

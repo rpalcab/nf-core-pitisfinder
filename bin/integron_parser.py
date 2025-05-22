@@ -191,5 +191,5 @@ if __name__ == "__main__":
             integron_name = f'in0_{sample}_{count}'
             row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, [])
 
-    summary_df.to_csv(report_out, index=False)
+    summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")

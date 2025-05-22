@@ -42,7 +42,7 @@ def main():
     seqid2size = gbk.get_seqid2size()
     space = 0 if len(seqid2size) == 1 else 2
     circos = Circos(sectors=seqid2size, space=space)
-    circos.text(f"{gbk.name}\n{'\n'.join(seqid2size.keys())}", size=12, r=20)
+    circos.text(f"{gbk.name}", size=12, r=20)
 
     seqid2features = gbk.get_seqid2features(feature_type=None)
     seqid2seq = gbk.get_seqid2seq()
@@ -63,6 +63,10 @@ def main():
         # rrna_track = sector.add_track((76, 83), r_pad_ratio=0.1)
         # trna_track = sector.add_track((76, 83), r_pad_ratio=0.1)
         amr_track = sector.add_track((76, 83), r_pad_ratio=0.1)
+        pl_track = sector.add_track((73, 76), r_pad_ratio=0.1)
+        int_track = sector.add_track((70, 73), r_pad_ratio=0.1)
+        ph_track = sector.add_track((67, 70), r_pad_ratio=0.1)
+        is_track = sector.add_track((64, 67), r_pad_ratio=0.1)
 
         # Plot Forward CDS, Reverse CDS, rRNA, tRNA
         features = seqid2features[sector.name]
@@ -77,6 +81,14 @@ def main():
             #     trna_track.genomic_features(feature, color="magenta", lw=0.1)
             if feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', []):
                 amr_track.genomic_features(feature, color="cyan", lw=0.1)
+            if feature.type == "MGE" and 'plasmid' in feature.qualifiers.get('type', []):
+                pl_track.genomic_features(feature, color="green", lw=0.1)
+            if feature.type == "MGE" and 'integron' in feature.qualifiers.get('type', []):
+                int_track.genomic_features(feature, color="magenta", lw=0.1)
+            if feature.type == "MGE" and 'prophage' in feature.qualifiers.get('type', []):
+                ph_track.genomic_features(feature, color="grey", lw=0.1)
+            if feature.type == "MGE" and 'IS' in feature.qualifiers.get('type', []):
+                is_track.genomic_features(feature, color="purple", lw=0.1)
 
         # Plot 'gene' qualifier label if exists
         labels, label_pos_list = [], []
@@ -85,15 +97,15 @@ def main():
             end = int(feature.location.end)
             label_pos = (start + end) / 2
             gene_name = feature.qualifiers.get("gene", [None])[0]
-            if gene_name is not None:
+            if gene_name is not None and 'AMR' in feature.qualifiers.get('tag', []):
                 labels.append(gene_name)
                 label_pos_list.append(label_pos)
         f_cds_track.xticks(label_pos_list, labels, label_size=6, label_orientation="vertical")
 
-        # Plot xticks (interval = 10 Kb)
-        r_cds_track.xticks_by_interval(
-            10000, outer=False, label_formatter=lambda v: f"{v/1000:.1f} Kb"
-        )
+        # # Plot xticks (interval = 10 Kb)
+        # r_cds_track.xticks_by_interval(
+        #     10000, outer=False, label_formatter=lambda v: f"{v/1000:.1f} Kb"
+        # )
 
         # Plot GC content
         gc_content_track = sector.add_track((55, 60))
@@ -134,6 +146,10 @@ def main():
         # Patch(color="green", label="rRNA"),
         # Patch(color="magenta", label="tRNA"),
         Patch(color="cyan", label="AMR"),
+        Patch(color="green", label="Plasmid"),
+        Patch(color="magenta", label="Integron"),
+        Patch(color="grey", label="Prophage"),
+        Patch(color="purple", label="IS"),
 
         Line2D([], [], color="black", label="Positive GC Content", marker="^", ms=6, ls="None"),
         Line2D([], [], color="grey", label="Negative GC Content", marker="v", ms=6, ls="None"),
