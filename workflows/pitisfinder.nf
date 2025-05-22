@@ -95,6 +95,24 @@ process MERGE_ANNOTATIONS {
     """
 }
 
+process PLASMID_SUMMARY {
+    tag "$meta.id"
+    label 'process_single'
+
+    input:
+    tuple val(meta), path(report)
+
+    output:
+    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
+
+    script:
+    def prefix = "${meta.id}"
+    """
+    echo -e "Contig\tStart\tEnd\tName\tAMR" > plasmid_summary.tsv
+    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, 1, \$4, \$2":"\$3, \$5}' >> plasmid_summary.tsv
+    """
+}
+
 workflow PITISFINDER {
 
     take:
@@ -102,6 +120,7 @@ workflow PITISFINDER {
     main:
 
     ch_versions = Channel.empty()
+    ch_summary = Channel.empty()
 
     // Channel solo con sample y fasta
     ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
@@ -186,6 +205,17 @@ workflow PITISFINDER {
             .set { ch_plasmidparser }
 
         PLASMID_PARSER (ch_plasmidparser)
+        PLASMID_PARSER.out.report
+            .map { meta, plasmid, report ->
+                [meta, report]
+            }
+            .groupTuple()
+            .map { meta, report ->
+                [meta, report.flatten()]
+            }
+            .set { ch_plasmidsummary }
+
+        PLASMID_SUMMARY ( ch_plasmidsummary )
         VISUALIZE_CIRCULAR (PLASMID_PARSER.out.gbk)
     }
 

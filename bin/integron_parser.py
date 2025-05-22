@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     # Output
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "integrons_summary.tsv"
+    report_out = args.out_dir / "integron_summary.tsv"
 
     # Try open integron file, quit if fail
     try:

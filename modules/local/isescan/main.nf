@@ -11,11 +11,12 @@ process ISESCAN {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("*.tsv")   , emit: tsv, optional: true
-    tuple val(meta), path("*.gff")   , emit: gff, optional: true
-    tuple val(meta), path("*.is.fna"), emit: isfna, optional: true
-    tuple val(meta), path("*.orf.fna"), emit: orffna, optional: true
-    tuple val(meta), path("*.orf.faa"), emit: orffaa, optional: true
+    tuple val(meta), path("${fasta}.tsv")    , emit: tsv
+    tuple val(meta), path("${fasta}.gff")    , emit: gff
+    tuple val(meta), path("${fasta}.is.fna") , emit: isfna
+    tuple val(meta), path("${fasta}.orf.fna"), emit: orffna
+    tuple val(meta), path("${fasta}.orf.faa"), emit: orffaa
+    tuple val(meta), path("IS_summary.tsv")  , emit: summary
     path "versions.yml"                          , emit: versions
 
     when:
@@ -30,6 +31,8 @@ process ISESCAN {
         --nthread $task.cpus \\
         --output . \\
         --seqfile $fasta
+
+    cut -f 1,3-5 ${fasta}.tsv | sed -e 's/seqID/Contig/' -e 's/cluster/Name/' -e 's/isBegin/Start/' -e 's/isEnd/End/' > IS_summary.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
