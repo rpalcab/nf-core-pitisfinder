@@ -3,18 +3,13 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-// include { FASTQC                   } from '../modules/nf-core/fastqc/main'
-// include { MULTIQC                  } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
-include { PLASMIDFINDER               } from '../modules/nf-core/plasmidfinder/main'
 include { PLASMID_PARSER              } from '../modules/local/plasmidparser/main'
 include { VISUALIZE_CIRCULAR          } from '../modules/local/visualize/circular/main'
-// include { GENOMAD_DOWNLOAD            } from '../modules/nf-core/genomad/download/main'
-// include { GENOMAD_ENDTOEND            } from '../modules/nf-core/genomad/endtoend/main'
 include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA                 } from '../modules/local/copla/copla/main'
 include { INTEGRONFINDER              } from '../modules/local/integronfinder/main'
@@ -24,17 +19,12 @@ include { IS_BLAST                    } from '../modules/local/isblast/main'
 include { IS_PARSER                   } from '../modules/local/isparser/main'
 include { ISESCAN                     } from '../modules/local/isescan/main'
 include { PHISPY                      } from '../modules/nf-core/phispy/main'
-include { PHIGARO_SETUP               } from '../modules/local/phigaro/phigaro_setup'
-include { PHIGARO                     } from '../modules/local/phigaro/phigaro'
-include { PHASTEST_PHASTESTDBDOWNLOAD } from '../modules/local/phastest/phastestdbdownload/main'
-include { PHASTEST_PHASTEST           } from '../modules/local/phastest/phastest/main'
 include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsyfinder/main'
 include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verifymodel/main'
-include { ICEBERG_DB_DOWNLOAD         } from '../modules/local/iceberg/dbdownload/main'
-include { ICEBERG_ICESEARCH           } from '../modules/local/iceberg/icesearch/main'
-include { ICEBERG_FILTER              } from '../modules/local/iceberg/icefilter/main'
 include { ICEFINDER2                  } from '../modules/local/icefinder2/main'
 include { SAMPLESUMMARY               } from '../modules/local/samplesummary/main'
+
+include { PLASMID_ANALYSIS            } from '../subworkflows/local/plasmid_analysis'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,6 +48,24 @@ process RENAME_PLASMIDS {
         new_name=\$(basename "\$i" | sed 's/plasmid_//' | sed 's/.fasta//')
         mv "\$i" \${new_name}_${meta.id}.fasta
     done
+    """
+}
+
+process PLASMID_SUMMARY {
+    tag "$meta.id"
+    label 'process_single'
+
+    input:
+    tuple val(meta), path(report)
+
+    output:
+    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
+
+    script:
+    def prefix = "${meta.id}"
+    """
+    echo -e "Contig\tName\tStart\tEnd\tAMR" > plasmid_summary.tsv
+    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
     """
 }
 
@@ -96,27 +104,13 @@ process MERGE_ANNOTATIONS {
     """
 }
 
-process PLASMID_SUMMARY {
-    tag "$meta.id"
-    label 'process_single'
-
-    input:
-    tuple val(meta), path(report)
-
-    output:
-    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
-
-    script:
-    def prefix = "${meta.id}"
-    """
-    echo -e "Contig\tName\tStart\tEnd\tAMR" > plasmid_summary.tsv
-    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
-    """
-}
-
 process PROCESS_PHISPY {
     tag "$meta.id"
     label 'process_single'
+
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://rpalcab/visualizer:1.0':
+        'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
     tuple val(meta), path(gbk)
@@ -148,7 +142,6 @@ process PROCESS_PHISPY {
     # Rename fasta files starting from 1
     n=1
     for file in \$(ls tmp_pp_*_${prefix}.fasta | sort -V); do
-        echo \$file
         newname=\$(printf "pp_%d_${prefix}.fasta" "\$n")
         mv "\$file" "\$newname"
         n=\$((n + 1))
@@ -167,110 +160,51 @@ workflow PITISFINDER {
     main:
 
     ch_versions = Channel.empty()
+
+    // INITIALIZE SUMMARY CHANNEL
     ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
         return [ meta, [] ]
-    }
-    .set { ch_summary }
+        }.set { ch_summary }
 
-    // Channel solo con sample y fasta
+    // PREPARE ONLY FASTA CHANNEL
     ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
         return [ meta, fasta ]
-    }
-    .set { ch_fasta }
+        }.set { ch_fasta }
 
+    // MERGE GBK AND AMR ANNOTATIONS
     ch_samplesheet.map {  meta, fasta, faa, gbk, amr ->
         return [ meta, amr, gbk ]
-    }.set { ch_mergeann }
-    MERGE_ANNOTATIONS (ch_mergeann)
+        }.set { ch_mergeann }
+    MERGE_ANNOTATIONS ( ch_mergeann )
 
+    // PREPARE FULL CHANNEL WITH MERGED ANNOTATIONS
     ch_samplesheet
         .join(MERGE_ANNOTATIONS.out.gbk)
         .map {  meta, fasta, faa, gbk, amr, merged_gbk ->
             return [ meta, fasta, faa, merged_gbk ]
         }.set { ch_full }
 
+    // PREPARE ONLY GBK WITH FULL ANNOTATIONS CHANNEL
+     ch_full
+        .map { meta, fasta, faa, gbk ->
+            return [ meta, gbk ]
+        }.set { ch_gbk }
+
     //
-    // PLASMIDS (ESTO IRÁ A SUBWORKFLOW)
+    // PLASMIDS
     //
     if ( !params.skip_plasmids ) {
-        //
-        // MOBSUITE RECON
-        //
-        MOBSUITE_RECON (ch_fasta)
-        ch_mobsuite_pl = MOBSUITE_RECON.out.plasmids
-        ch_mobsuite_chr = MOBSUITE_RECON.out.chromosome
-        ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
-        //
-        // PLASMIDFINDER
-        //
-        // PLASMIDFINDER (ch_fasta)
-        // ch_versions = ch_versions.mix( PLASMIDFINDER.out.versions )
-        // RENAME PLASMIDS
-        // OJO! Ya no filtra por tamaño
-        ch_rename = RENAME_PLASMIDS (ch_mobsuite_pl)
-        ch_rename
-            .flatMap { meta, plasmid_files ->
-                def file_list = plasmid_files instanceof List ? plasmid_files : [plasmid_files]
-                file_list.collect { file ->
-                    def plasmid_name = file.baseName
-                    return tuple(meta, plasmid_name, file)
-                }
-            }
-            .set{ ch_plasmids }
-        // COPLA
-        ch_copladb = Channel.empty()
-        if (!params.copla_db){
-            COPLA_COPLADBDOWNLOAD ()
-            ch_copladb = COPLA_COPLADBDOWNLOAD.out.db
-        } else {
-            ch_copladb = Channel.value(params.copla_db)
-        }
-        COPLA_COPLA ( ch_plasmids, ch_copladb)
-        ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
+        PLASMID_ANALYSIS(
+                    ch_fasta,
+                    ch_gbk,
+                    params.copla_db ? params.copla_db : null
+                )
+        ch_versions = ch_versions.mix( PLASMID_ANALYSIS.out.versions )
 
-        // PREPARE PLASMID_PARSER CHANNEL
-        COPLA_COPLA.out.query
-            .join(COPLA_COPLA.out.ptu, by: [0, 1])
-            .set { ch_coplajoint }
-
-        ch_full.map { meta, fasta, faa, gbk ->
-            return [ meta, gbk ]
-            }
-            .join(MOBSUITE_RECON.out.mobtyper_results)
-            .join(MOBSUITE_RECON.out.contig_report)
-            .set { ch_mobsample }
-
-        ch_mobsample
-            .cross(ch_coplajoint)
-            .map { mob, copla ->
-                def meta = mob[0]
-                def gbk = mob[1]
-                def mob_typer = mob[2]
-                def contig_report = mob[3]
-                def plasmid_name = copla[1]
-                def qry = copla[2]
-                def ptu = copla[3]
-                return [ meta, plasmid_name, qry, ptu, gbk, mob_typer, contig_report ]
-            }
-            .set { ch_plasmidparser }
-
-        PLASMID_PARSER (ch_plasmidparser)
-        PLASMID_PARSER.out.report
-            .map { meta, plasmid, report ->
-                [meta, report]
-            }
-            .groupTuple()
-            .map { meta, report ->
-                [meta, report.flatten()]
-            }
-            .set { ch_plasmidsummary }
-
-        PLASMID_SUMMARY ( ch_plasmidsummary )
-        VISUALIZE_CIRCULAR (PLASMID_PARSER.out.gbk)
         ch_summary = ch_summary
-                        .join(PLASMID_SUMMARY.out.summary, remainder: true)
+                        .join( PLASMID_ANALYSIS.out.summary, remainder: true )
                         .map { meta, file_list, summary ->
-                            summary ? [meta, file_list + [summary]] : [meta, file_list]
+                            summary ? [ meta, file_list + [ summary ] ] : [ meta, file_list ]
                     }
     }
 
@@ -313,9 +247,9 @@ workflow PITISFINDER {
     }
 
     if ( !params.skip_is ) {
-        //
-        // INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
-        //
+        ////
+        //// INSERTION SEQUENCES (ESTO IRÁ A SUBWORKFLOW)
+        ////
         // ch_is_input = Channel.empty()
         // if ( !params.skip_plasmids ) {
         //     ch_is_input = ch_mobsuite_chr
@@ -375,47 +309,6 @@ workflow PITISFINDER {
                         .map { meta, file_list, summary ->
                             summary ? [meta, file_list + [summary]] : [meta, file_list]
                     }
-        // //
-        // // PHIGARO
-        // //
-        // ch_phigaro_setup = params.phigaro_db ? Channel.fromPath(params.phigaro_db).map{ it -> [it] } : Channel.of([])
-        // PHIGARO_SETUP(ch_phigaro_setup)
-        // // Create value channels for db and config
-        // ch_db = PHIGARO_SETUP.out.pvog.first()
-        // ch_config = PHIGARO_SETUP.out.config.first()
-
-        // PHIGARO(
-        //     ch_fasta,
-        //     ch_db,
-        //     ch_config
-        // )
-        // ch_versions = ch_versions.mix( PHIGARO.out.versions )
-
-        //
-        // PHASTEST
-        //
-        // ch_phastestdb = Channel.empty()
-        // if (!params.phastest_db){
-        //     PHASTEST_PHASTESTDBDOWNLOAD ()
-        //     ch_phastestdb = PHASTEST_PHASTESTDBDOWNLOAD.out.db
-        // } else {
-        //     ch_phastestdb = Channel.value(params.phastest_db)
-        // }
-        // PHASTEST_PHASTEST ( ch_fasta, ch_phastestdb)
-        // ch_versions = ch_versions.mix( PHASTEST_PHASTEST.out.versions )
-
-        //
-        // Genomad
-        //
-
-        // if ( params.genomad_db ) {
-        //     ch_db_for_genomad = Channel.fromPath(params.genomad_db)
-        // } else {
-        //     ch_db_for_genomad = GENOMAD_DOWNLOAD( ).genomad_db
-        //     ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
-        // }
-        // ch_identified_viruses = GENOMAD_ENDTOEND ( ch_fasta, ch_db_for_genomad ).virus_fasta
-        // ch_versions.mix( GENOMAD_ENDTOEND.out.versions )
     }
 
     if ( !params.skip_ices ) {
@@ -425,7 +318,7 @@ workflow PITISFINDER {
         // MACSYFINDER
         ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
             return [ meta, faa, gbk ]
-        }.join(MOBSUITE_RECON.out.contig_report)
+        }.join(PLASMID_ANALYSIS.out.contig_report)
         .set { ch_msy_preproc }
         FILTER_FAA (ch_msy_preproc)
         ch_msymodel = Channel.value('CONJScan/Plasmids')
@@ -433,24 +326,10 @@ workflow PITISFINDER {
         ch_model = VERIFYMODEL.out.model
         MACSYFINDER (FILTER_FAA.out.chr, ch_model)
         ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
-        //
-        // ICEBERG
-        //
-        // Create a channel with the ICEberg database path or 'null' if not provided
-        // if ( !params.iceberg_db){
-        //     // Run the ICEBERG_DB_DOWNLOAD process
-        //     ICEBERG_DB_DOWNLOAD()
-        //     ch_iceberg_db = ICEBERG_DB_DOWNLOAD.out.db
-        // }
-        // else {
-        //     ch_iceberg_db = Channel.value(params.iceberg_db)
-        // }
-        // ICEBERG_ICESEARCH(ch_mobsuite_chr, ch_iceberg_db)
-        // ch_versions = ch_versions.mix( ICEBERG_ICESEARCH.out.versions )
-        // ICEBERG_FILTER(ICEBERG_ICESEARCH.out.tsv)
-        //
-        // ICEFINDER2
-        //
+
+        ////
+        //// ICEFINDER2
+        ////
         // ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
         //     return [ meta, gbk ]
         // }.set { ch_icefinder }
