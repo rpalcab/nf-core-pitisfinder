@@ -3,22 +3,18 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { paramsSummaryMap            } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
-include { VISUALIZE_CIRCULAR          } from '../modules/local/visualize/circular/main'
-include { VISUALIZE_LINEAR            } from '../modules/local/visualize/linear/main'
-include { ISESCAN                     } from '../modules/local/isescan/main'
-include { PHISPY                      } from '../modules/nf-core/phispy/main'
-include { MACSYFINDER                 } from '../modules/local/macsyfinder/macsyfinder/main'
-include { VERIFYMODEL                 } from '../modules/local/macsyfinder/verifymodel/main'
-include { ICEFINDER2                  } from '../modules/local/icefinder2/main'
-include { SAMPLESUMMARY               } from '../modules/local/samplesummary/main'
+include { paramsSummaryMap       } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
+include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
+include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
+include { ISESCAN                } from '../modules/local/isescan/main'
 
-include { PLASMID_ANALYSIS            } from '../subworkflows/local/plasmid_analysis'
-include { INTEGRON_ANALYSIS           } from '../subworkflows/local/integron_analysis'
-include { PROPHAGE_ANALYSIS           } from '../subworkflows/local/prophage_analysis'
+include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
+include { INTEGRON_ANALYSIS      } from '../subworkflows/local/integron_analysis'
+include { PROPHAGE_ANALYSIS      } from '../subworkflows/local/prophage_analysis'
+include { ICE_ANALYSIS           } from '../subworkflows/local/ice_analysis'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,47 +22,15 @@ include { PROPHAGE_ANALYSIS           } from '../subworkflows/local/prophage_ana
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-process FILTER_FAA {
-    tag "$meta.id"
-    label 'process_single'
-
-    input:
-    tuple val(meta), path(faa), path(gbk), path(chr)
-
-    output:
-    tuple val(meta), path("${meta.id}/*_filtered.faa"), emit: chr
-
-    script:
-    def prefix = "${meta.id}"
-    """
-    cut -f2,5 $chr | grep "chromosome" | cut -f2 > chr.txt
-    faa_contig_filter.py -f $faa -g $gbk -c chr.txt -o $prefix
-    """
-}
-
-process MERGE_ANNOTATIONS {
-    tag "$meta.id"
-    label 'process_single'
-
-    input:
-    tuple val(meta), path(amr), path(gbk)
-
-    output:
-    tuple val(meta), path("${meta.id}_merged.gbk"), emit: gbk
-
-    script:
-    def prefix = "${meta.id}"
-    """
-    merge_amr.py -t $amr -g $gbk -o "$prefix"_merged.gbk
-    """
-}
-
 workflow PITISFINDER {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
     main:
 
+    //
+    // INITIALIZE CHANNELS
+    //
     ch_versions = Channel.empty()
 
     // INITIALIZE SUMMARY CHANNEL
@@ -98,6 +62,17 @@ workflow PITISFINDER {
             return [ meta, gbk ]
         }.set { ch_gbk }
 
+    // PREPARE FAA CHANNEL
+    ch_samplesheet
+        .map { meta, fasta, faa, gbk, amr ->
+            return [ meta, faa ]
+        }.set { ch_faa }
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        START EGM SECTION
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
     //
     // PLASMIDS
     //
@@ -168,29 +143,13 @@ workflow PITISFINDER {
     // ICEs
     //
     if ( !params.skip_ices ) {
-
-        // MACSYFINDER
-        ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
-            return [ meta, faa, gbk ]
-        }.join(PLASMID_ANALYSIS.out.contig_report)
-        .set { ch_msy_preproc }
-        FILTER_FAA (ch_msy_preproc)
-        ch_msymodel = Channel.value('CONJScan/Plasmids')
-        VERIFYMODEL (ch_msymodel)
-        ch_model = VERIFYMODEL.out.model
-        MACSYFINDER (FILTER_FAA.out.chr, ch_model)
-        ch_versions = ch_versions.mix( MACSYFINDER.out.versions )
-
-        ////
-        //// ICEFINDER2
-        ////
-        // ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
-        //     return [ meta, gbk ]
-        // }.set { ch_icefinder }
-        // ICEFINDER2 ( ch_icefinder )
-        // ch_versions = ch_versions.mix( ICEFINDER2.out.versions )
+        ICE_ANALYSIS(ch_faa, ch_gbk, PLASMID_ANALYSIS.out.contig_report)
+        ch_versions = ch_versions.mix(ICE_ANALYSIS.out.versions)
     }
 
+    //
+    // SAMPLE SUMMARY
+    //
     ch_summary.join( MERGE_ANNOTATIONS.out.gbk )
               .set { ch_samplesummary }
 
