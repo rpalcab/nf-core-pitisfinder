@@ -2,45 +2,9 @@ include { MOBSUITE_RECON      } from '../../../modules/nf-core/mobsuite/recon/ma
 include { COPLA_COPLADBDOWNLOAD     } from '../../../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA     } from '../../../modules/local/copla/copla/main'
 include { PLASMID_PARSER     } from '../../../modules/local/plasmidparser/main'
+include { RENAME_PLASMIDS     } from '../../../modules/local/renameplasmids/main'
+include { PLASMID_SUMMARY     } from '../../../modules/local/plasmidsummary/main'
 include { VISUALIZE_CIRCULAR     } from '../../../modules/local/visualize/circular/main'
-
-// TODO: Move these processes to plasmid_utils or slt
-process RENAME_PLASMIDS {
-    tag "$meta.id"
-    label 'process_medium'
-
-    input:
-    tuple val(meta), path(plasmid_files)
-
-    output:
-    tuple val(meta), path("*.fasta"), emit: filtered_plasmids, optional: true
-
-    script:
-    """
-    for i in ${plasmid_files}; do
-        new_name=\$(basename "\$i" | sed 's/plasmid_//' | sed 's/.fasta//')
-        mv "\$i" \${new_name}_${meta.id}.fasta
-    done
-    """
-}
-
-process PLASMID_SUMMARY {
-    tag "$meta.id"
-    label 'process_single'
-
-    input:
-    tuple val(meta), path(report)
-
-    output:
-    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
-
-    script:
-    def prefix = "${meta.id}"
-    """
-    echo -e "Contig\tName\tStart\tEnd\tAMR" > plasmid_summary.tsv
-    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
-    """
-}
 
 workflow PLASMID_ANALYSIS {
 

@@ -1,9 +1,3 @@
-// TODO nf-core: If in doubt look at other nf-core/subworkflows to see how we are doing things! :)
-//               https://github.com/nf-core/modules/tree/master/subworkflows
-//               You can also ask for help via your pull request or on the #subworkflows channel on the nf-core Slack workspace:
-//               https://nf-co.re/join
-// TODO nf-core: A subworkflow SHOULD import at least two modules
-
 include { INTEGRONFINDER   } from '../../../modules/local/integronfinder/main'
 include { INTEGRON_PARSER  } from '../../../modules/local/integronparser/main'
 include { VISUALIZE_LINEAR } from '../../../modules/local/visualize/linear/main'
