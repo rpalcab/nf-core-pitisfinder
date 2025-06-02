@@ -7,13 +7,7 @@ include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
-include { MOBSUITE_RECON              } from '../modules/nf-core/mobsuite/recon/main'
-include { PLASMID_PARSER              } from '../modules/local/plasmidparser/main'
 include { VISUALIZE_CIRCULAR          } from '../modules/local/visualize/circular/main'
-include { COPLA_COPLADBDOWNLOAD       } from '../modules/local/copla/copladbdownload/main'
-include { COPLA_COPLA                 } from '../modules/local/copla/copla/main'
-include { INTEGRONFINDER              } from '../modules/local/integronfinder/main'
-include { INTEGRON_PARSER             } from '../modules/local/integronparser/main'
 include { VISUALIZE_LINEAR            } from '../modules/local/visualize/linear/main'
 include { IS_BLAST                    } from '../modules/local/isblast/main'
 include { IS_PARSER                   } from '../modules/local/isparser/main'
@@ -25,49 +19,13 @@ include { ICEFINDER2                  } from '../modules/local/icefinder2/main'
 include { SAMPLESUMMARY               } from '../modules/local/samplesummary/main'
 
 include { PLASMID_ANALYSIS            } from '../subworkflows/local/plasmid_analysis'
+include { INTEGRON_ANALYSIS           } from '../subworkflows/local/integron_analysis'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-process RENAME_PLASMIDS {
-    tag "$meta.id"
-    label 'process_medium'
-
-    input:
-    tuple val(meta), path(plasmid_files)
-
-    output:
-    tuple val(meta), path("*.fasta"), emit: filtered_plasmids, optional: true
-
-    script:
-    """
-    for i in ${plasmid_files}; do
-        new_name=\$(basename "\$i" | sed 's/plasmid_//' | sed 's/.fasta//')
-        mv "\$i" \${new_name}_${meta.id}.fasta
-    done
-    """
-}
-
-process PLASMID_SUMMARY {
-    tag "$meta.id"
-    label 'process_single'
-
-    input:
-    tuple val(meta), path(report)
-
-    output:
-    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
-
-    script:
-    def prefix = "${meta.id}"
-    """
-    echo -e "Contig\tName\tStart\tEnd\tAMR" > plasmid_summary.tsv
-    tail -q -n+2 $report | cut -f2,6,3,4,19 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5}' >> plasmid_summary.tsv
-    """
-}
 
 process FILTER_FAA {
     tag "$meta.id"
@@ -184,7 +142,7 @@ workflow PITISFINDER {
             return [ meta, fasta, faa, merged_gbk ]
         }.set { ch_full }
 
-    // PREPARE ONLY GBK WITH FULL ANNOTATIONS CHANNEL
+    // PREPARE ONLY GBK WITH MERGED ANNOTATIONS CHANNEL
      ch_full
         .map { meta, fasta, faa, gbk ->
             return [ meta, gbk ]
@@ -208,42 +166,21 @@ workflow PITISFINDER {
                     }
     }
 
+    //
+    // INTEGRONS
+    //
     if ( !params.skip_integrons ) {
-        //
-        // INTEGRONS (ESTO IRÁ A SUBWORKFLOW)
-        //
-        // INTEGRONFINDER
-        INTEGRONFINDER (ch_fasta)
-        ch_versions = ch_versions.mix( INTEGRONFINDER.out.versions )
-        ch_integron_raw = INTEGRONFINDER.out.integrons
-        // Process results
-        ch_full.map { meta, fasta, faa, gbk ->
-            return [ meta, gbk ]
-            }.join(ch_integron_raw)
-            .set { ch_merged }
-        INTEGRON_PARSER ( ch_merged )
+        INTEGRON_ANALYSIS(
+                    ch_fasta,
+                    ch_gbk
+                )
+        ch_versions = ch_versions.mix(INTEGRON_ANALYSIS.out.versions)
+
         ch_summary = ch_summary
-                        .join(INTEGRON_PARSER.out.summary, remainder: true)
+                        .join( INTEGRON_ANALYSIS.out.summary, remainder: true )
                         .map { meta, file_list, summary ->
-                            summary ? [meta, file_list + [summary]] : [meta, file_list]
+                            summary ? [ meta, file_list + [ summary ] ] : [ meta, file_list ]
                     }
-
-        INTEGRON_PARSER.out.gbk
-            .flatMap { meta, gbk_files ->
-            if (gbk_files instanceof List) {
-                // If gbk_files is a list, process each file
-                return gbk_files.collect { gbk_file ->
-                    def int_meta = [id: gbk_file.name.tokenize('.')[0]]
-                    [meta, int_meta, gbk_file]
-                }
-            } else {
-                // If gbk_files is a single file, process it directly
-                def int_meta = [id: gbk_files.name.tokenize('.')[0]]
-                return [[meta, int_meta, gbk_files]]
-            }
-        }.set { ch_vislin }
-
-        VISUALIZE_LINEAR (ch_vislin)
     }
 
     if ( !params.skip_is ) {
