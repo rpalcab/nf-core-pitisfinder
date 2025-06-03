@@ -11,6 +11,7 @@ include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
 
+include { RVD_ANNOTATION         } from '../subworkflows/local/rvd_annotation'
 include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
 include { INTEGRON_ANALYSIS      } from '../subworkflows/local/integron_analysis'
 include { PROPHAGE_ANALYSIS      } from '../subworkflows/local/prophage_analysis'
@@ -67,6 +68,12 @@ workflow PITISFINDER {
         .map { meta, fasta, faa, gbk, amr ->
             return [ meta, faa ]
         }.set { ch_faa }
+
+    // RES, VIR, DEF ANNOTATION
+    RVD_ANNOTATION (
+            ch_fasta,
+            params.df_db ? params.df_db : null
+        )
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
