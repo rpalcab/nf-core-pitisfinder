@@ -21,8 +21,10 @@
 
 **nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences, Integrative Conjugative Elements), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-pitisfinder_logo_dark.png">
+    <img alt="nf-core/pitisfinder" src="docs/images/metromap_style_pipeline_workflow_components.drawio.png">
+  </picture>
 
 Implemented tools:
 - Plasmids ([`MOBrecon`](github.com/phac-nml/mob-suite/) and [`COPLA`](https://github.com/santirdnd/COPLA))
