@@ -12,7 +12,6 @@ process COPLA_COPLA {
     path (copladb)
 
     output:
-    // tuple val(meta), val(plasmid_name), path("$plasmid_name/"), emit: results
     tuple val(meta), val(plasmid_name), path("$plasmid_name/*.qry_info.tsv"), emit: query
     tuple val(meta), val(plasmid_name), path("$plasmid_name/*.ptu_prediction.tsv"), emit: ptu
     tuple val(meta), val(plasmid_name), path("$plasmid_name/copla.txt"), emit: log

@@ -15,7 +15,6 @@ process COPLA_COPLADBDOWNLOAD {
 
     script:
     """
-    echo "Downloading Copla DB"
     download_Copla_databases
     """
 
