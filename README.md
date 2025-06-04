@@ -19,48 +19,58 @@
 
 ## Introduction
 
-**nf-core/pitisfinder** is a bioinformatics pipeline that ...
-
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+**nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences, Integrative Conjugative Elements), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+
+Implemented tools:
+- Plasmids ([`MOBrecon`](github.com/phac-nml/mob-suite/) and [`COPLA`](https://github.com/santirdnd/COPLA))
+- Prophages ([`PhiSpy`](https://github.com/linsalrob/PhiSpy))
+- Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
+- Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
+- Integrative Conjugative Elements ([`ICEFinder2`](https://bioinfo-mml.sjtu.edu.cn/index_bioinfo.php))
 
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,fasta,gbk
+sampleA,sampleA.fasta,sampleA.gbk
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
-
 Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run nf-core/pitisfinder \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
    --outdir <OUTDIR>
+```
+> [!WARNING]
+> Please be aware that `conda` profile is not available, as not all tools can be installed through Conda.
+
+In addition to default nf-core parameters, **pitisfinder also accepts these inputs/options**:
+```
+Local databases (if not provided, they are automatically downloaded):
+  --df_db                   [string] Path to DefenseFinder database. See https://github.com/mdmparis/defense-finder/ for mandatory directory structure and content. 
+  --copla_db                [string] Path to Copla databases. See https://github.com/santirdnd/COPLA for mandatory directory structure and content. 
+  --phispy_db               [string] Path to pVOG database HMM profiles. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz 
+```
+
+```
+Skipping Options:
+  --skip_plasmids           [boolean] Skip plasmid search. [default: false] 
+  --skip_integrons          [boolean] Skip integron search. [default: false] 
+  --skip_is                 [boolean] Skip IS search. [default: false] 
+  --skip_prophages          [boolean] Skip prophage search. [default: false] 
+  --skip_ices               [boolean] Skip ICEs search. [default: false]
 ```
 
 > [!WARNING]
@@ -70,17 +80,31 @@ For more details and further functionality, please refer to the [usage documenta
 
 ## Pipeline output
 
+The output directory will contain a separate folder for each sample. Within each sample folder, the structure will be as follows:
+
+- `Subfolders for each MGE type`: These will contain the results from the corresponding analysis program(s) and a `summary` folder, that includes:
+  - Nucleotide sequences in FASTA format.
+  - Gene annotations in GenBank format.
+  - A tabular report in TSV format for each individual MGE.
+  - A tabular report in TSV format for all MGEs of that class found.
+  - A genomic plot in PNG format.
+
+- `annotation` directory, which provides:
+  - The full genomic annotation in GenBank format, including identified antimicrobial resistance genes, virulence factors, and defense systems.
+  - A comprehensive tabular report (TSV) listing all MGEs found.
+  - A genomic plot (PNG) summarizing the annotations related to resistance, virulence, and defense features.
+
 To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/pitisfinder/results) tab on the nf-core website pipeline page.
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/pitisfinder/output).
 
 ## Credits
 
-nf-core/pitisfinder was originally written by Rosalía Palomino-Cabrera, Jorge Rodríguez-Grande.
+nf-core/pitisfinder was originally written by [Rosalía Palomino-Cabrera](https://github.com/rpalcab), [Jorge Rodríguez-Grande](https://github.com/Aluminio-visto/).
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+[Yolanda Benitez](https://github.com/yolandabq), [Daniel Valle](https://github.com/Daniel-VM), Alba Talavera, [Sara Monzón](https://github.com/saramonzon)
 
 ## Contributions and Support
 
@@ -92,8 +116,6 @@ For further information or help, don't hesitate to get in touch on the [Slack `#
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
 <!-- If you use nf-core/pitisfinder for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
