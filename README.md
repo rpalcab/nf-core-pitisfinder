@@ -30,6 +30,7 @@ Implemented tools:
 - Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
 - Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
 - Integrative Conjugative Elements ([`ICEFinder2`](https://bioinfo-mml.sjtu.edu.cn/index_bioinfo.php))
+- Functional annotation ([`ABRicate`](https://github.com/tseemann/abricate) and [`DefenseFinder`](https://github.com/mdmparis/defense-finder))
 
 ## Usage
 
