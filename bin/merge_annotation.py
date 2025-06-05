@@ -59,7 +59,7 @@ def annotate_record(record, df, nts_diff):
             seq_segment = seq_segment.reverse_complement()
         translation = str(seq_segment.translate(table=11, to_stop=False))
         qualifiers = {
-            'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}]"],
+            'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}"],
             'product': [row['PRODUCT']],
             'locus_tag': [f"{row['ACCESSION']}_{row['START']}_{row['END']}"],
             'protein_id': [f"gnl|Abricate|{row['ACCESSION']}_{row['START']}_{row['END']}"],

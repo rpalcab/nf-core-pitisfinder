@@ -68,17 +68,11 @@ workflow PITISFINDER {
         .set { ch_mergeann }
     MERGE_ANNOTATIONS ( ch_mergeann )
 
-    // PREPARE FULL CHANNEL WITH MERGED ANNOTATIONS
+    // PREPARE CHANNEL WITH MERGED ANNOTATIONS
     ch_samplesheet
         .join(MERGE_ANNOTATIONS.out.gbk)
         .map {  meta, fasta, faa, gbk, merged_gbk ->
-            return [ meta, fasta, faa, merged_gbk ]
-        }.set { ch_full }
-
-    // PREPARE ONLY GBK WITH MERGED ANNOTATIONS CHANNEL
-     ch_full
-        .map { meta, fasta, faa, gbk ->
-            return [ meta, gbk ]
+            return [ meta, merged_gbk ]
         }.set { ch_gbk }
 
     /*
