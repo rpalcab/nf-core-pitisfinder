@@ -3,7 +3,7 @@ process MERGE_ANNOTATIONS {
     label 'process_single'
 
     input:
-    tuple val(meta), path(amr), path(gbk)
+    tuple val(meta), path(gbk), path(amr), path(vf)
 
     output:
     tuple val(meta), path("${meta.id}_merged.gbk"), emit: gbk
@@ -11,6 +11,6 @@ process MERGE_ANNOTATIONS {
     script:
     def prefix = "${meta.id}"
     """
-    merge_amr.py -t $amr -g $gbk -o "$prefix"_merged.gbk
+    merge_annotation.py -g $gbk -a $amr -v $vf -o "$prefix"_merged.gbk
     """
 }

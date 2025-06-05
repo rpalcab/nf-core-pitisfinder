@@ -35,37 +35,18 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // INITIALIZE SUMMARY CHANNEL
-    ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+    ch_samplesheet.map { meta, fasta, faa, gbk ->
         return [ meta, [] ]
         }.set { ch_summary }
 
     // PREPARE ONLY FASTA CHANNEL
-    ch_samplesheet.map { meta, fasta, faa, gbk, amr ->
+    ch_samplesheet.map { meta, fasta, faa, gbk ->
         return [ meta, fasta ]
         }.set { ch_fasta }
 
-    // MERGE GBK AND AMR ANNOTATIONS
-    ch_samplesheet.map {  meta, fasta, faa, gbk, amr ->
-        return [ meta, amr, gbk ]
-        }.set { ch_mergeann }
-    MERGE_ANNOTATIONS ( ch_mergeann )
-
-    // PREPARE FULL CHANNEL WITH MERGED ANNOTATIONS
-    ch_samplesheet
-        .join(MERGE_ANNOTATIONS.out.gbk)
-        .map {  meta, fasta, faa, gbk, amr, merged_gbk ->
-            return [ meta, fasta, faa, merged_gbk ]
-        }.set { ch_full }
-
-    // PREPARE ONLY GBK WITH MERGED ANNOTATIONS CHANNEL
-     ch_full
-        .map { meta, fasta, faa, gbk ->
-            return [ meta, gbk ]
-        }.set { ch_gbk }
-
     // PREPARE FAA CHANNEL
     ch_samplesheet
-        .map { meta, fasta, faa, gbk, amr ->
+        .map { meta, fasta, faa, gbk ->
             return [ meta, faa ]
         }.set { ch_faa }
 
@@ -74,6 +55,31 @@ workflow PITISFINDER {
             ch_fasta,
             params.df_db ? params.df_db : null
         )
+
+    RVD_ANNOTATION.out.amr_report
+    RVD_ANNOTATION.out.vf_report
+
+    // MERGE GBK AND AMR ANNOTATIONS
+    ch_samplesheet.map {  meta, fasta, faa, gbk ->
+        return [ meta, gbk ]
+        }
+        .join ( RVD_ANNOTATION.out.amr_report )
+        .join ( RVD_ANNOTATION.out.vf_report )
+        .set { ch_mergeann }
+    MERGE_ANNOTATIONS ( ch_mergeann )
+
+    // PREPARE FULL CHANNEL WITH MERGED ANNOTATIONS
+    ch_samplesheet
+        .join(MERGE_ANNOTATIONS.out.gbk)
+        .map {  meta, fasta, faa, gbk, merged_gbk ->
+            return [ meta, fasta, faa, merged_gbk ]
+        }.set { ch_full }
+
+    // PREPARE ONLY GBK WITH MERGED ANNOTATIONS CHANNEL
+     ch_full
+        .map { meta, fasta, faa, gbk ->
+            return [ meta, gbk ]
+        }.set { ch_gbk }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

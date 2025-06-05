@@ -23,6 +23,7 @@ process ABRICATE_RUN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def datadir = databasedir ? "--datadir ${databasedir}" : ''
+    def outname = db ? "${prefix}_${db}.txt" : "${prefix}.txt"
     def db = db ? "--db ${db}" : ''
     """
     ## Symlink when necessary to rename the file to allow specifying the prefix variable inside report
@@ -37,7 +38,7 @@ process ABRICATE_RUN {
         ${datadir} \\
         ${db} \\
         --threads ${task.cpus} \\
-        > ${prefix}.txt
+        > ${outname}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

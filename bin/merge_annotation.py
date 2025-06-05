@@ -7,6 +7,7 @@ Adds and modifies features to facilitate parsing and annotation.
 
 import argparse
 import pandas as pd
+import numpy as np
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
@@ -15,6 +16,14 @@ def load_tab(tab_path):
     df['START'] = df['START'].astype(int)
     df['END'] = df['END'].astype(int)
     return df
+
+def merge_tables(df_amr, df_vr):
+    df_annotation = pd.concat([df_amr, df_vr])
+    df_annotation.sort_values(by=['SEQUENCE', 'START'], inplace=True)
+    df_annotation['tag'] = ['AMR' if db == 'card' else
+                            ('VF' if db == 'vfdb' else '')
+                            for db in df_annotation['DATABASE']]
+    return df_annotation
 
 def annotate_record(record, df, nts_diff):
     # select only tab hits for this contig (by SEQUENCE)
@@ -46,13 +55,15 @@ def annotate_record(record, df, nts_diff):
         strand_val = 1 if row['STRAND'] == '+' else -1
         loc = FeatureLocation(row['START'] - 1, row['END'], strand=strand_val)
         seq_segment = record.seq[loc.start:loc.end]
-        translation = str(seq_segment.translate(table=11, to_stop=True))
+        if strand_val == -1:
+            seq_segment = seq_segment.reverse_complement()
+        translation = str(seq_segment.translate(table=11, to_stop=False))
         qualifiers = {
             'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}]"],
             'product': [row['PRODUCT']],
             'locus_tag': [f"{row['ACCESSION']}_{row['START']}_{row['END']}"],
             'protein_id': [f"gnl|Abricate|{row['ACCESSION']}_{row['START']}_{row['END']}"],
-            'tag': ['AMR'],
+            'tag': row['tag'],
             'translation': [translation],
             'codon_start': ['1'],
             'transl_table': ['11'],
@@ -70,20 +81,24 @@ def annotate_record(record, df, nts_diff):
     record.features = source_feats + other_feats
     return record
 
-def main(tab, gbk, output, nts_diff):
-    df = load_tab(tab)
+def main(amr, vf, gbk, output, nts_diff):
+    df_amr = load_tab(amr)
+    df_vf = load_tab(vf)
+    df_annotation = merge_tables(df_amr, df_vf)
     records = list(SeqIO.parse(gbk, 'genbank'))
     annotated = []
     for rec in records:
-        annotated.append(annotate_record(rec, df, nts_diff))
+        annotated.append(annotate_record(rec, df_annotation, nts_diff))
     SeqIO.write(annotated, output, 'genbank')
     print(f"Wrote annotated GenBank to {output}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge abricate.tab with GenBank file annotations')
-    parser.add_argument('-t', '--tab', required=True, help='Path to abricate.tab file')
     parser.add_argument('-g', '--gbk', required=True, help='Path to input GenBank file')
+    parser.add_argument('-a', '--amr', required=True, help='Path to abricate_amr.tab file')
+    parser.add_argument('-v', '--vf', required=True, help='Path to abricate_vf.tab file')
     parser.add_argument('-o', '--output', default='annotated_output.gbk', help='Output GenBank path')
     parser.add_argument('-n', '--nts_diff', default=15, help='Allowed N nucleotide overlapping (default: 15)')
     args = parser.parse_args()
-    main(args.tab, args.gbk, args.output, args.nts_diff)
+
+    main(args.amr, args.vf, args.gbk, args.output, args.nts_diff)

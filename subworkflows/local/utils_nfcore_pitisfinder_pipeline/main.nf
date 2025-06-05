@@ -74,18 +74,6 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        // .map {
-        //     // meta, fastq_1, fastq_2 ->
-        //     //     if (!fastq_2) {
-        //     //         return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-        //     //     } else {
-        //     //         return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-        //     //     }
-        //     meta, fasta ->
-        //     println "META: " + meta
-        //     println "FASTA: " + fasta
-        //         return [ meta, fasta ]
-        // }
         .map { samplesheet ->
             validateInputSamplesheet(samplesheet)
         }
@@ -170,7 +158,7 @@ def validateInputParameters() {
 // Validate channels from input samplesheet
 //
 def validateInputSamplesheet(input) {
-    def (metas, fasta, faa, gbk, amr) = input[0..4]
+    def (metas, fasta, faa, gbk) = input[0..3]
 
     // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
     // def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
@@ -178,7 +166,7 @@ def validateInputSamplesheet(input) {
     //     error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
     // }
 
-    return [ metas, fasta, faa, gbk, amr ]
+    return [ metas, fasta, faa, gbk ]
 }
 //
 // Get attribute from genome config file e.g. fasta

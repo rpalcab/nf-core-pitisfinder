@@ -31,14 +31,8 @@
                 "format": "file-path",
                 "exists": true,
                 "pattern": "^\\S+\\.(gbk|gbff)$"
-            },
-            "amr": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.tab$"
             }
         },
-        "required": ["sample", "fasta", "faa", "gbk", "amr"]
+        "required": ["sample", "fasta", "faa", "gbk"]
     }
 }
