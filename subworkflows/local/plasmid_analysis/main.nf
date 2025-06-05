@@ -1,10 +1,10 @@
-include { MOBSUITE_RECON      } from '../../../modules/nf-core/mobsuite/recon/main'
-include { COPLA_COPLADBDOWNLOAD     } from '../../../modules/local/copla/copladbdownload/main'
-include { COPLA_COPLA     } from '../../../modules/local/copla/copla/main'
-include { PLASMID_PARSER     } from '../../../modules/local/plasmidparser/main'
-include { RENAME_PLASMIDS     } from '../../../modules/local/renameplasmids/main'
-include { PLASMID_SUMMARY     } from '../../../modules/local/plasmidsummary/main'
-include { VISUALIZE_CIRCULAR     } from '../../../modules/local/visualize/circular/main'
+include { MOBSUITE_RECON        } from '../../../modules/nf-core/mobsuite/recon/main'
+include { COPLA_COPLADBDOWNLOAD } from '../../../modules/local/copla/copladbdownload/main'
+include { COPLA_COPLA           } from '../../../modules/local/copla/copla/main'
+include { PLASMID_PARSER        } from '../../../modules/local/plasmidparser/main'
+include { RENAME_PLASMIDS       } from '../../../modules/local/renameplasmids/main'
+include { PLASMID_SUMMARY       } from '../../../modules/local/plasmidsummary/main'
+include { VISUALIZE_CIRCULAR    } from '../../../modules/local/visualize/circular/main'
 
 workflow PLASMID_ANALYSIS {
 

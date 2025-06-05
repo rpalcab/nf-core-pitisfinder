@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
                    help="Sample name (goes in the Sample column)")
     p.add_argument("-g", "--genbank", required=True, type=Path,
                    help="Assembly GenBank file (.gbk)")
-    p.add_argument("-t", "--tables", required=True,
+    p.add_argument("-t", "--tables",
                    help="Comma-separated list of *_summary.tsv files")
     p.add_argument("-o", "--out", required=True, type=Path,
                    help="Output prefix (writes <out>.tsv)")
@@ -63,6 +63,10 @@ def infer_mge_type(path: Path) -> str:
 def main():
     args = parse_args()
 
+    # 0) Check there are MGE tables to merge
+    if args.tables is None:
+        logger.warning("No tables provided; no output written.")
+        exit(0)
     # 1) load contigs for validation
     try:
         gbk_records = list(SeqIO.parse(str(args.genbank), "genbank"))
@@ -127,18 +131,16 @@ def main():
         merged.append(df2)
 
     # 3) concatenate and write out
-    if merged:
-        out_df = pd.concat(merged, ignore_index=True)
-        out_df.sort_values(
-                            by=["Contig", "Start"],
-                            ascending=[True, True],
-                            inplace=True
+    out_df = pd.concat(merged, ignore_index=True)
+    out_df.sort_values(
+                        by=["Contig", "Start"],
+                        ascending=[True, True],
+                        inplace=True
                         )
-        out_file = args.out.with_suffix(".tsv")
-        out_df.to_csv(out_file, sep="\t", index=False)
-        logger.info(f"Written merged table to {out_file}")
-    else:
-        logger.warning("No tables were merged; no output written.")
+    out_file = args.out.with_suffix(".tsv")
+    out_df.to_csv(out_file, sep="\t", index=False)
+    logger.info(f"Written merged table to {out_file}")
+
 
     # 4) write GenBank with added MGE features
     updated_records = []
