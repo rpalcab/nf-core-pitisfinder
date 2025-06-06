@@ -102,6 +102,7 @@ def main():
         # MGE track (if wanted)
         if args.mge_elements is True:
             marker_track = sector.add_track((71, 74), r_pad_ratio=0.1)
+            marker_track.axis(fc="#eaeaea", ec="lightgrey", lw=0.3)
 
         tracks = {'outer_track': outer_track,
                   'gc_content_track': gc_content_track,
@@ -114,8 +115,39 @@ def main():
             track.axis(fc=bg_color, ec="lightgrey", lw=0.3)
             tracks[track_var] = track
 
-        # Plot CDS (fwd, rev) rRNA, tRNA and MGEs
         features = seqid2features[sector.name]
+
+        # Plot xticks & intervals on inner position
+        genome_size = sum(gbk.get_seqid2size().values())
+        if genome_size > 1000000:
+            interval = math.ceil((genome_size * .97 // 8) / 100000) * 100000
+            div=1000000
+            units="Mb"
+        else:
+            interval = math.ceil((genome_size // 8) / 1000) * 1000
+            div=1000
+            units="Kb"
+        tracks["cds_track"].xticks_by_interval(
+            interval=interval,
+            outer=True,
+            label_formatter=lambda v: f"{v/ div:.1f} {units}",
+            label_orientation="vertical",
+            line_kws=dict(ec="grey"),
+        )
+
+        # Plot 'gene' qualifier label if exists
+        labels, label_pos_list = [], []
+        for feature in features:
+            start, end = int(feature.location.start), int(feature.location.end)
+            label_pos = (start + end) / 2
+            gene_name = feature.qualifiers.get("gene", [None])[0]
+            if gene_name is not None and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws = {"weight":"bold"})
+                labels.append(gene_name)
+                label_pos_list.append(label_pos)
+
+        # Plot CDS (fwd, rev) rRNA, tRNA and MGEs
+
         for feature in features:
             # Gral features
             if feature.type == "CDS" and feature.location.strand == 1:
@@ -162,35 +194,10 @@ def main():
                     tag = feature.qualifiers['tag'][0]
                     marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
                     feature_presence[tag] = True
-
-        # Plot 'gene' qualifier label if exists
-        labels, label_pos_list = [], []
-        for feature in features:
-            start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) / 2
-            gene_name = feature.qualifiers.get("gene", [None])[0]
-            if gene_name is not None and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
-                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws = {"weight":"bold"})
-                labels.append(gene_name)
-                label_pos_list.append(label_pos)
-
-        # Plot xticks & intervals on inner position
-        genome_size = sum(gbk.get_seqid2size().values())
-        if genome_size > 1000000:
-            interval = math.ceil((genome_size * .97 // 8) / 100000) * 100000
-            div=1000000
-            units="Mb"
-        else:
-            interval = math.ceil((genome_size // 8) / 1000) * 1000
-            div=1000
-            units="Kb"
-        tracks["cds_track"].xticks_by_interval(
-            interval=interval,
-            outer=True,
-            label_formatter=lambda v: f"{v/ div:.1f} {units}",
-            label_orientation="vertical",
-            line_kws=dict(ec="grey"),
-        )
+                    start, end = int(feature.location.start), int(feature.location.end)
+                    label_pos = (start + end) / 2
+                    gene_name = feature.qualifiers.get("gene", [None])[0]
+                    tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
 
         # Plot GC content
         gc_content_track = sector.add_track((55, 60))

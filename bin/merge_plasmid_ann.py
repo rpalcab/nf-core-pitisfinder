@@ -26,6 +26,8 @@ def reformat_table(df_biom):
         "replicon": "Replicon"
     }
     df_biom['tag'] = df_biom['biomarker'].map(d_tag)
+    df_biom['product'] = df_biom['qseqid']
+    df_biom['gene'] = df_biom['qseqid'].str.split('|').str[0]
     return df_biom
 
 def annotate_record(record, df, nts_diff):
@@ -45,9 +47,11 @@ def annotate_record(record, df, nts_diff):
         fend   = int(feat.location.end) - nts_diff
         # check overlap with any tab row
         overlap = False
-        for _, row in df_rec.iterrows():
+        for i, row in df_rec.iterrows():
             if not (fend < row['sstart'] or fstart > row['send']):
                 overlap = True
+                df_rec.loc[i, 'product'] = feat.qualifiers.get('product', [row['product']])[0]
+                df_rec.loc[i, 'gene'] = feat.qualifiers.get('gene', [row['gene']])[0]
                 break
         if not overlap:
             new_features.append(feat)
@@ -63,15 +67,15 @@ def annotate_record(record, df, nts_diff):
         translation = str(seq_segment.translate(table=11, to_stop=False))
         qualifiers = {
             'db_xref': [f"MOBsuite:{row['qseqid']}"],
-            'product': [row['qseqid']],
+            'product': [row['product']],
             'locus_tag': [f"{row['qseqid']}_{row['sstart']}_{row['send']}"],
             'protein_id': [f"gnl|MOBsuite|{row['qseqid']}_{row['sstart']}_{row['send']}"],
             'tag': row['tag'],
             'translation': [translation],
             'codon_start': ['1'],
             'transl_table': ['11'],
-            'inference': [f"MOBsuite prediction, id% {row['pident']}, qcov% {row['qcovhsp']} to {row['qseqid'].split('|')[0]}"],
-            'gene': [row['qseqid'].split('|')[0]],
+            'inference': [f"MOBsuite prediction, id% {row['pident']}, qcov% {row['qcovhsp']} to {row['gene']}"],
+            'gene': [row['gene']],
             'mge_element': ['yes']
         }
         new_feat = SeqFeature(location=loc, type='CDS', qualifiers=qualifiers)
