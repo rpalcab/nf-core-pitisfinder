@@ -15,6 +15,7 @@ process MOBSUITE_RECON {
     tuple val(meta), path("contig_report.txt")   , emit: contig_report
     tuple val(meta), path("plasmid_*.fasta")     , emit: plasmids        , optional: true
     tuple val(meta), path("mobtyper_results.txt"), emit: mobtyper_results, optional: true
+    tuple val(meta), path("biomarkers.blast.txt"), emit: biomarkers      , optional: true
     path "versions.yml"                                  , emit: versions
 
     when:

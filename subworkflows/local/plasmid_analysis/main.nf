@@ -1,4 +1,5 @@
 include { MOBSUITE_RECON        } from '../../../modules/nf-core/mobsuite/recon/main'
+include { PLASMIDMARKERS        } from '../../../modules/local/plasmidmarkers/main'
 include { COPLA_COPLADBDOWNLOAD } from '../../../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA           } from '../../../modules/local/copla/copla/main'
 include { PLASMID_PARSER        } from '../../../modules/local/plasmidparser/main'
@@ -20,6 +21,13 @@ workflow PLASMID_ANALYSIS {
     // MOBSUITE
     MOBSUITE_RECON ( ch_fasta )
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
+
+    // UPDATE GENOMIC GBK
+    MOBSUITE_RECON.out.biomarkers
+                .join(ch_gbk)
+                .set { ch_updategbk }
+
+    PLASMIDMARKERS(ch_updategbk)
 
     // RENAME PLASMIDS
     ch_rename = RENAME_PLASMIDS ( MOBSUITE_RECON.out.plasmids )
@@ -49,7 +57,7 @@ workflow PLASMID_ANALYSIS {
         .join(COPLA_COPLA.out.ptu, by: [ 0, 1 ])
         .set { ch_coplajoint }
 
-    ch_gbk
+    PLASMIDMARKERS.out.gbk
         .join(MOBSUITE_RECON.out.mobtyper_results)
         .join(MOBSUITE_RECON.out.contig_report)
         .set { ch_mobsample }
@@ -70,21 +78,38 @@ workflow PLASMID_ANALYSIS {
 
     PLASMID_PARSER( ch_plasmidparser )
 
+    // VISUALIZATION
+    VISUALIZE_CIRCULAR( PLASMID_PARSER.out.gbk )
+
     // CREATE SUMMARY
     PLASMID_PARSER.out.report
-        .map { meta, plasmid, report -> [ meta, report ] }
-        .groupTuple()
-        .map { meta, report -> [ meta, report.flatten() ] }
-        .set { ch_plasmidsummary }
+            .groupTuple()
+            .map { meta, plasmid, report ->
+                return [ meta, report.flatten() ]
+            }
+            .set { ch_reports }
+
+    PLASMID_PARSER.out.gbk
+            .groupTuple()
+            .map { meta, plasmid, gbk ->
+                return [ meta, gbk.flatten() ]
+            }
+            .set { ch_plasmidgbks }
+
+    ch_reports
+            .join(ch_plasmidgbks)
+            .join(PLASMIDMARKERS.out.gbk)
+            .set { ch_plasmidsummary }
 
     PLASMID_SUMMARY( ch_plasmidsummary )
-    VISUALIZE_CIRCULAR( PLASMID_PARSER.out.gbk )
+
 
     emit:
     plasmids        = MOBSUITE_RECON.out.plasmids       // channel: [ val(meta), [ plasmid_fastas ] ]
     chromosome      = MOBSUITE_RECON.out.chromosome     // channel: [ val(meta), [ chromosome_fastas ] ]
     contig_report   = MOBSUITE_RECON.out.contig_report  // channel: [ val(meta), contig_report ]
     summary         = PLASMID_SUMMARY.out.summary       // channel: [ val(meta), summary ]
+    genomic_gbk     = PLASMIDMARKERS.out.gbk            // channel: [ val(meta), gbk ]
     versions        = ch_versions                       // channel: [ versions.yml ]
 }
 

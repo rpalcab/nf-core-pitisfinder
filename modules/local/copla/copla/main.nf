@@ -12,9 +12,13 @@ process COPLA_COPLA {
     path (copladb)
 
     output:
-    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.qry_info.tsv"), emit: query
-    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.ptu_prediction.tsv"), emit: ptu
-    tuple val(meta), val(plasmid_name), path("$plasmid_name/copla.txt"), emit: log
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.qry_info.tsv")                   , emit: query
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/*.ptu_prediction.tsv")             , emit: ptu
+    tuple val(meta), val(plasmid_name), path("$plasmid_name/copla.txt")                        , emit: log
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}/${plasmid_name}.fasta_conjscan/results_tab.report.tsv"), emit: conj, optional: true
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}/${plasmid_name}.fasta_mobscan/results_tab.tsv")        , emit: mob , optional: true
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}/${plasmid_name}.fasta_pfinder/results_tab.tsv")        , emit: rep , optional: true
+    tuple val(meta), val(plasmid_name), path("${plasmid_name}/${plasmid_name}.fasta.faa")            , emit: faa
     path "versions.yml", emit: versions
 
     when:

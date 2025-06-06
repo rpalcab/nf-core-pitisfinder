@@ -67,6 +67,7 @@ def main():
     if args.tables is None:
         logger.warning("No tables provided; no output written.")
         exit(0)
+
     # 1) load contigs for validation
     try:
         gbk_records = list(SeqIO.parse(str(args.genbank), "genbank"))

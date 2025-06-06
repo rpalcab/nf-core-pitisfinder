@@ -66,6 +66,10 @@ def main():
         "AMR": False,
         "VF": False,
         "DF": False,
+        "MPF": False,
+        "oriT": False,
+        "MOB": False,
+        "Replicon": False,
         "GC Content": True,
         "GC Skew": True,
     }
@@ -80,17 +84,29 @@ def main():
         ("rvd_track", (74, 77), "AMR/VF/DF")
     ]
 
-    for sector in circos.sectors:
+    mge_colors = {
+        "MPF": "#911EB4",
+        "oriT": "#F58230",
+        "MOB": "#46F0F0",
+        "Replicon": "#F032E6"
+    }
 
+    for sector in circos.sectors:
+        #Outer track
         outer_track = sector.add_track((98, 100))
         outer_track.axis(fc="lightgrey")
         # GC tracks
         gc_content_track = sector.add_track((65, 70), r_pad_ratio=0.1)
         gc_skew_track = sector.add_track((55, 65), r_pad_ratio=0.1)
+
+        # MGE track (if wanted)
+        if args.mge_elements is True:
+            marker_track = sector.add_track((71, 74), r_pad_ratio=0.1)
+
         tracks = {'outer_track': outer_track,
                   'gc_content_track': gc_content_track,
-                  'gc_skew_track': gc_skew_track
-                  }
+                  'gc_skew_track': gc_skew_track                  }
+
 
         for i, (track_var, radius_range, label) in enumerate(track_info):
             bg_color = "#f8f8f8" if (i % 2 == 0) else "#eaeaea"
@@ -139,6 +155,13 @@ def main():
             if feature.type == "CDS" and 'DF' in feature.qualifiers.get('tag', []):
                 tracks["rvd_track"].genomic_features(feature, color="#808080", lw=0.1)
                 feature_presence["DF"] = True
+
+            # MGE biomarkers (if wanted)
+            if args.mge_elements is True:
+                if feature.type == "CDS" and 'yes' in feature.qualifiers.get('mge_element', []):
+                    tag = feature.qualifiers['tag'][0]
+                    marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
+                    feature_presence[tag] = True
 
         # Plot 'gene' qualifier label if exists
         labels, label_pos_list = [], []
@@ -216,6 +239,10 @@ def main():
         "AMR": Patch(color="#D2F53C", label="AMR"),
         "VF": Patch(color="#AA6E28", label="VF"),
         "DF": Patch(color="#808080", label="DF"),
+        "MPF": Patch(color="#911EB4", label="MPF"),
+        "oriT": Patch(color="#F58230", label="oriT"),
+        "MOB": Patch(color="#46F0F0", label="MOB"),
+        "Replicon": Patch(color="#F032E6", label="Replicon"),
         "GC Content": [
             Line2D([], [], color="black", label="Positive GC Content", marker="^", ms=6, ls="None"),
             Line2D([], [], color="grey", label="Negative GC Content", marker="v", ms=6, ls="None"),

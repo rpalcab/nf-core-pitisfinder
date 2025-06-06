@@ -21,7 +21,7 @@ process VISUALIZE_CIRCULAR {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    circos_plot.py -i $gbk -o ${plasmid_name}.png
+    circos_plot.py -i $gbk -o ${plasmid_name}.png -m
     """
 
     stub:
