@@ -1,5 +1,6 @@
-include { PHISPY         } from '../../../modules/nf-core/phispy/main'
-include { PROCESS_PHISPY } from '../../../modules/local/processphispy/main'
+include { PVOGDOWNLOAD     } from '../../../modules/local/pvogdownload/main'
+include { PHISPY           } from '../../../modules/nf-core/phispy/main'
+include { PROCESS_PHISPY   } from '../../../modules/local/processphispy/main'
 include { VISUALIZE_LINEAR } from '../../../modules/local/visualize/linear/main'
 
 workflow PROPHAGE_ANALYSIS {
@@ -14,7 +15,9 @@ workflow PROPHAGE_ANALYSIS {
 
     // PHISPY
     ch_phispydb = phispy_db ? Channel.value(phispy_db) : Channel.value([])
-    PHISPY(ch_gbk, ch_phispydb)
+    PVOGDOWNLOAD()
+
+    PHISPY(ch_gbk, PVOGDOWNLOAD.out.pvogs_db)
 
     ch_versions = ch_versions.mix(PHISPY.out.versions)
 
