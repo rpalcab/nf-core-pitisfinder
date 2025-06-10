@@ -1,4 +1,5 @@
 include { INTEGRONFINDER   } from '../../../modules/local/integronfinder/main'
+include { INTEGRONMARKERS  } from '../../../modules/local/integronmarkers/main'
 include { INTEGRON_PARSER  } from '../../../modules/local/integronparser/main'
 include { VISUALIZE_LINEAR } from '../../../modules/local/visualize/linear/main'
 
@@ -17,12 +18,19 @@ workflow INTEGRON_ANALYSIS {
     ch_versions = ch_versions.mix(INTEGRONFINDER.out.versions.first())
 
     // PREPARE INTEGRON_PARSER CHANNEL
-    ch_gbk
-        .join( INTEGRONFINDER.out.integrons )
-        .set { ch_merged }
+    INTEGRONFINDER.out.integrons
+        .join( ch_gbk )
+        .set { ch_updategbk }
 
-    //INTEGRON_PARSER
-    INTEGRON_PARSER ( ch_merged )
+    // INTEGRON MARKERS
+    INTEGRONMARKERS( ch_updategbk )
+
+    INTEGRONMARKERS.out.gbk
+        .join( INTEGRONFINDER.out.integrons )
+        .set { ch_integronparser }
+
+    // INTEGRON_PARSER
+    INTEGRON_PARSER ( ch_integronparser )
 
     // PREPARE VISUALIZATION CHANNEL
     INTEGRON_PARSER.out.gbk

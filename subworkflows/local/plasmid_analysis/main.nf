@@ -27,6 +27,7 @@ workflow PLASMID_ANALYSIS {
                 .join(ch_gbk)
                 .set { ch_updategbk }
 
+    // ANNOTATE PLASMID MARKERS
     PLASMIDMARKERS(ch_updategbk)
 
     // RENAME PLASMIDS

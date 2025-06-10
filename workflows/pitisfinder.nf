@@ -29,9 +29,11 @@ workflow PITISFINDER {
     ch_samplesheet // channel: samplesheet read in from --input
     main:
 
-    //
-    // INITIALIZE CHANNELS
-    //
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        INITIALIZE CHANNELS
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
     ch_versions = Channel.empty()
 
     // INITIALIZE SUMMARY CHANNEL
