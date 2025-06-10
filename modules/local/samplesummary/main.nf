@@ -8,7 +8,7 @@ process SAMPLESUMMARY {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), path(tsv_list), path(gbk)
+    tuple val(meta), path(tsv_list), path(gbk_list), path(gbk)
 
     output:
     tuple val(meta), path("${meta.id}_summary.gbk"), emit: gbk, optional: true

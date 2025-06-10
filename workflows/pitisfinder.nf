@@ -38,7 +38,7 @@ workflow PITISFINDER {
 
     // INITIALIZE SUMMARY CHANNEL
     ch_samplesheet.map { meta, fasta, faa, gbk ->
-        return [ meta, [] ]
+        return [ meta, [], [] ]
         }.set { ch_summary }
 
     // PREPARE ONLY FASTA CHANNEL
@@ -95,8 +95,9 @@ workflow PITISFINDER {
 
         ch_summary = ch_summary
                         .join( PLASMID_ANALYSIS.out.summary, remainder: true )
-                        .map { meta, file_list, summary ->
-                            summary ? [ meta, file_list + [ summary ] ] : [ meta, file_list ]
+                        .join( PLASMID_ANALYSIS.out.genomic_gbk, remainder: true )
+                        .map { meta, summary_list, gbk_list, summary, genomic_gbk ->
+                            summary ? [ meta, summary_list + [ summary ], gbk_list + [ genomic_gbk ] ] : [ meta, summary_list, gbk_list ]
                     }
     }
 
@@ -112,8 +113,9 @@ workflow PITISFINDER {
 
         ch_summary = ch_summary
                         .join( INTEGRON_ANALYSIS.out.summary, remainder: true )
-                        .map { meta, file_list, summary ->
-                            summary ? [ meta, file_list + [ summary ] ] : [ meta, file_list ]
+                        .join( INTEGRON_ANALYSIS.out.genomic_gbk, remainder: true )
+                        .map { meta, summary_list, gbk_list, summary, genomic_gbk ->
+                            summary ? [ meta, summary_list + [ summary ], gbk_list + [ genomic_gbk ] ] : [ meta, summary_list, gbk_list ]
                     }
     }
 
@@ -126,8 +128,8 @@ workflow PITISFINDER {
 
         ch_summary = ch_summary
                         .join(ISESCAN.out.summary, remainder: true)
-                        .map { meta, file_list, summary ->
-                            summary ? [ meta, file_list + [summary] ] : [ meta, file_list ]
+                        .map { meta, summary_list, gbk_list, summary ->
+                            summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, file_list, summary_list, gbk_list ]
                     }
     }
 
@@ -143,8 +145,8 @@ workflow PITISFINDER {
 
         ch_summary = ch_summary
                         .join(PROPHAGE_ANALYSIS.out.summary, remainder: true)
-                        .map { meta, file_list, summary ->
-                            summary ? [ meta, file_list + [ summary ] ] : [ meta, file_list ]
+                        .map { meta, summary_list, gbk_list, summary ->
+                            summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, summary_list, gbk_list ]
                     }
     }
 
