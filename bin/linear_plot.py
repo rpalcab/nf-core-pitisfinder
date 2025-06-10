@@ -68,6 +68,9 @@ def main():
             if 'AMR' in feature.qualifiers.get('tag', [''])[0]:
                 track.add_features(feature, hatch='//', fc="#0082C8", label_type="gene", ls="none")
                 legend_elements.add('AMR')
+            if 'VF' in feature.qualifiers.get('tag', [''])[0]:
+                track.add_features(feature, fc="#CF0B0B", label_type="gene", ls="none")
+                legend_elements.add('VF')
             elif 'hypothetical' in feature.qualifiers.get('product', [''])[0].lower():
                 track.add_features(feature, label_type="gene", fc='grey', ls="none")
                 legend_elements.add('hypothetical')
@@ -98,13 +101,14 @@ def main():
         'attC': (d_tag['attC'], None, 'attC site'),
         'CDS': ("#0082C8", None, 'CDS'),
         'AMR': ("#0082C8", '//', 'AMR gene'),
+        'VF': ("#CF0B0B", None, 'VF gene'),
         'hypothetical': ("grey", None, 'Hypothetical gene'),
     }
 
     # Create handles only for present elements in consistent order
     ordered_keys = [
         'intI', 'Pc', 'Pint', 'attI', 'attC',
-        'CDS', 'AMR', 'hypothetical'
+        'AMR', 'VF', 'CDS', 'hypothetical'
     ]
     legend_handles = []
     for key in ordered_keys:

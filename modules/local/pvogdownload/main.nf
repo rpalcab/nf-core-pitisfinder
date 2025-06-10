@@ -8,7 +8,7 @@ process PVOGDOWNLOAD {
         'biocontainers/blast:2.16.0--h66d330f_4' }"
 
     output:
-    path "db/pVOGs.hmm"           , emit: pvogs_db
+    path "pVOGs.hmm"           , emit: pvogs_db
     path "pvogs_annotations.csv"  , emit: pvogs_ann
 
     when:

@@ -7,16 +7,13 @@ workflow PROPHAGE_ANALYSIS {
 
     take:
     ch_gbk          // channel: [ val(meta), [ bam ] ]
-    phispy_db       // path: Phispy database (optional)
 
     main:
 
     ch_versions = Channel.empty()
 
     // PHISPY
-    ch_phispydb = phispy_db ? Channel.value(phispy_db) : Channel.value([])
     PVOGDOWNLOAD()
-
     PHISPY(ch_gbk, PVOGDOWNLOAD.out.pvogs_db)
 
     ch_versions = ch_versions.mix(PHISPY.out.versions)

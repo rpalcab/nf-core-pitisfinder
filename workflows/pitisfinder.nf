@@ -137,10 +137,7 @@ workflow PITISFINDER {
     // PROPHAGES
     //
     if ( !params.skip_prophages ) {
-        PROPHAGE_ANALYSIS (
-                    ch_gbk,
-                    params.phispy_db ? params.phispy_db : null
-                )
+        PROPHAGE_ANALYSIS ( ch_gbk )
         ch_versions = ch_versions.mix(PROPHAGE_ANALYSIS.out.versions)
 
         ch_summary = ch_summary
