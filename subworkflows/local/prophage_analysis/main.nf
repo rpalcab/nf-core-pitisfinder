@@ -5,6 +5,7 @@ include { VISUALIZE_LINEAR } from '../../../modules/local/visualize/linear/main'
 include { GENOMAD_DOWNLOAD } from '../../../modules/nf-core/genomad/download/main'
 include { GENOMAD_ANNOTATE } from '../../../modules/local/genomad/annotate/main'
 include { GENOMAD_FINDPROVIRUSES } from '../../../modules/local/genomad/findproviruses/main'
+include { PROPHAGEMARKERS  } from '../../../modules/local/prophagemarkers/main'
 
 workflow PROPHAGE_ANALYSIS {
 
@@ -31,6 +32,14 @@ workflow PROPHAGE_ANALYSIS {
         .set { ch_findproviruses }
     GENOMAD_FINDPROVIRUSES ( ch_findproviruses, ch_genomaddb )
     ch_versions.mix( GENOMAD_ANNOTATE.out.versions )
+
+    // PROPHAGE MARKERS
+    GENOMAD_FINDPROVIRUSES.out.provirus_genes
+            .join ( GENOMAD_FINDPROVIRUSES.out.provirus )
+            .join( ch_gbk )
+            .set { ch_updategbk }
+
+    PROPHAGEMARKERS ( ch_updategbk )
 
     // PHISPY
     PVOGDOWNLOAD()

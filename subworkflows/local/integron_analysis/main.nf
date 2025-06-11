@@ -17,7 +17,7 @@ workflow INTEGRON_ANALYSIS {
     INTEGRONFINDER ( ch_fasta )
     ch_versions = ch_versions.mix(INTEGRONFINDER.out.versions.first())
 
-    // PREPARE INTEGRON_PARSER CHANNEL
+    // PREPARE INTEGRONARKERS CHANNEL
     INTEGRONFINDER.out.integrons
         .join( ch_gbk )
         .set { ch_updategbk }
