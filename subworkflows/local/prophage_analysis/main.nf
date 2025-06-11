@@ -2,15 +2,35 @@ include { PVOGDOWNLOAD     } from '../../../modules/local/pvogdownload/main'
 include { PHISPY           } from '../../../modules/nf-core/phispy/main'
 include { PROCESS_PHISPY   } from '../../../modules/local/processphispy/main'
 include { VISUALIZE_LINEAR } from '../../../modules/local/visualize/linear/main'
+include { GENOMAD_DOWNLOAD } from '../../../modules/nf-core/genomad/download/main'
+include { GENOMAD_ANNOTATE } from '../../../modules/local/genomad/annotate/main'
+include { GENOMAD_FINDPROVIRUSES } from '../../../modules/local/genomad/findproviruses/main'
 
 workflow PROPHAGE_ANALYSIS {
 
     take:
-    ch_gbk          // channel: [ val(meta), [ bam ] ]
+    ch_fasta          // channel: [ val(meta), [ fasta ] ]
+    ch_gbk            // channel: [ val(meta), [ bam ] ]
+    genomad_db        // path (optional): genomad_db
 
     main:
 
     ch_versions = Channel.empty()
+
+    ch_genomaddb = Channel.empty()
+    if ( !genomad_db ) {
+        ch_genomaddb = GENOMAD_DOWNLOAD( ).genomad_db
+        ch_versions.mix( GENOMAD_DOWNLOAD.out.versions )
+    } else {
+        ch_genomaddb = Channel.value(file(genomad_db))
+    }
+
+    GENOMAD_ANNOTATE ( ch_fasta, ch_genomaddb )
+    ch_fasta.
+        join(GENOMAD_ANNOTATE.out.outdir)
+        .set { ch_findproviruses }
+    GENOMAD_FINDPROVIRUSES ( ch_findproviruses, ch_genomaddb )
+    ch_versions.mix( GENOMAD_ANNOTATE.out.versions )
 
     // PHISPY
     PVOGDOWNLOAD()

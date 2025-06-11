@@ -137,7 +137,11 @@ workflow PITISFINDER {
     // PROPHAGES
     //
     if ( !params.skip_prophages ) {
-        PROPHAGE_ANALYSIS ( ch_gbk )
+        PROPHAGE_ANALYSIS (
+                    ch_fasta,
+                    ch_gbk,
+                    params.genomad_db ? params.genomad_db : null
+                )
         ch_versions = ch_versions.mix(PROPHAGE_ANALYSIS.out.versions)
 
         ch_summary = ch_summary

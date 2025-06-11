@@ -51,7 +51,13 @@
                 "phispy_db": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "Path to pVOG database HMM profiles. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
+                    "description": "Path to pVOG database HMM profiles. See https://portal.nersc.gov/genomad/index.html for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "genomad_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {
