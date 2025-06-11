@@ -15,19 +15,7 @@ process GENOMAD_ANNOTATE {
     tuple val(meta), path("*_annotate/*_genes.tsv")       , emit: gene_annotation
     tuple val(meta), path("*_annotate/*_proteins.faa")    , emit: faa
     tuple val(meta), path("*_annotate")                   , emit: outdir
-    // tuple val(meta), path("*_annotate/*_taxonomy.tsv")                                      , emit: taxonomy
-    // tuple val(meta), path("*_find_proviruses/*_provirus.tsv")                               , emit: provirus
-    // tuple val(meta), path("*_score_calibration/*_compositions.tsv")                         , emit: compositions                , optional: true
-    // tuple val(meta), path("*_score_calibration/*_calibrated_aggregated_classification.tsv") , emit: calibrated_classification   , optional: true
-    // tuple val(meta), path("*_summary/*_plasmid.fna.gz")                                     , emit: plasmid_fasta
-    // tuple val(meta), path("*_summary/*_plasmid_genes.tsv")                                  , emit: plasmid_genes
-    // tuple val(meta), path("*_summary/*_plasmid_proteins.faa.gz")                            , emit: plasmid_proteins
-    // tuple val(meta), path("*_summary/*_plasmid_summary.tsv")                                , emit: plasmid_summary
-    // tuple val(meta), path("*_summary/*_virus.fna.gz")                                       , emit: virus_fasta
-    // tuple val(meta), path("*_summary/*_virus_genes.tsv")                                    , emit: virus_genes
-    // tuple val(meta), path("*_summary/*_virus_proteins.faa.gz")                              , emit: virus_proteins
-    // tuple val(meta), path("*_summary/*_virus_summary.tsv")                                  , emit: virus_summary
-    path "versions.yml"                                                                     , emit: versions
+    path "versions.yml"                                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -53,28 +41,10 @@ process GENOMAD_ANNOTATE {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def filename = "${fasta}"[0..<"${fasta}".lastIndexOf('.')]
     """
-    mkdir ${filename}_aggregated_classification
-    touch ${filename}_aggregated_classification/${filename}_aggregated_classification.tsv
-    mkdir ${filename}_annotate
-    touch ${filename}_annotate/${filename}_taxonomy.tsv
-    mkdir ${filename}_find_proviruses
-    touch ${filename}_find_proviruses/${filename}_provirus.tsv
-    mkdir ${filename}_marker_classification
-    mkdir ${filename}_nn_classification
-    mkdir ${filename}_score_calibration
-    touch ${filename}_score_calibration/${filename}_calibrated_aggregated_classification.tsv
-    touch ${filename}_score_calibration/${filename}_compositions.tsv
-    mkdir ${filename}_summary
-    touch ${filename}_summary/${filename}_plasmid.fna.gz
-    touch ${filename}_summary/${filename}_plasmid_genes.tsv
-    touch ${filename}_summary/${filename}_plasmid_proteins.faa.gz
-    touch ${filename}_summary/${filename}_plasmid_summary.tsv
-    touch ${filename}_summary/${filename}_virus.fna.gz
-    touch ${filename}_summary/${filename}_virus_genes.tsv
-    touch ${filename}_summary/${filename}_virus_proteins.faa.gz
-    touch ${filename}_summary/${filename}_virus_summary.tsv
+    mkdir ${prefix}_annotate
+    touch ${prefix}_annotate/*_genes.tsv
+    touch ${prefix}_annotate/*_proteins.faa
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
