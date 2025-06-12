@@ -11,7 +11,7 @@ process SAMPLESUMMARY {
     tuple val(meta), path(tsv_list), path(gbk_list), path(gbk)
 
     output:
-    tuple val(meta), path("${meta.id}_summary.gbk"), emit: gbk, optional: true
+    tuple val(meta), path("${meta.id}_markers.gbk"), emit: gbk, optional: true
     tuple val(meta), path("${meta.id}_summary.tsv"), emit: tsv, optional: true
     tuple val(meta), path("${meta.id}_summary.png"), emit: png, optional: true
     //path "versions.yml"           , emit: versions
@@ -25,6 +25,8 @@ process SAMPLESUMMARY {
     def tsv_str = tsv_list.join(',')
     def tsv_opt = tsv_str ? "-t ${tsv_str}" : ""
     def gbk_merged = tsv_str ? "${prefix}_summary.gbk" : gbk
+    def gbk_str = gbk_list.join(',')
+    def gbk_opt = "-u ${gbk_str}"
     """
     merge_egm.py \\
             -s $prefix \\
@@ -32,7 +34,9 @@ process SAMPLESUMMARY {
             ${tsv_opt} \\
             -o ${prefix}_summary
 
-    circos_plot.py -i ${gbk_merged} -o ${prefix}_summary.png
+    merge_gbks.py -g ${prefix}_summary.gbk $gbk_opt -o ${prefix}_markers.gbk
+
+    circos_plot.py -i ${prefix}_markers.gbk -o ${prefix}_summary.png
     """
 
     stub:

@@ -7,6 +7,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
+
 include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
