@@ -6,6 +6,7 @@ include { GENOMAD_DOWNLOAD } from '../../../modules/nf-core/genomad/download/mai
 include { GENOMAD_ANNOTATE } from '../../../modules/local/genomad/annotate/main'
 include { GENOMAD_FINDPROVIRUSES } from '../../../modules/local/genomad/findproviruses/main'
 include { PROPHAGEMARKERS  } from '../../../modules/local/prophagemarkers/main'
+include { PROPHAGEPARSER  } from '../../../modules/local/prophageparser/main'
 
 workflow PROPHAGE_ANALYSIS {
 
@@ -18,6 +19,7 @@ workflow PROPHAGE_ANALYSIS {
 
     ch_versions = Channel.empty()
 
+    // DOWNLOAD GENOMAD_DB
     ch_genomaddb = Channel.empty()
     if ( !genomad_db ) {
         ch_genomaddb = GENOMAD_DOWNLOAD( ).genomad_db
@@ -26,6 +28,7 @@ workflow PROPHAGE_ANALYSIS {
         ch_genomaddb = Channel.value(file(genomad_db))
     }
 
+    // GENOMAD
     GENOMAD_ANNOTATE ( ch_fasta, ch_genomaddb )
     ch_fasta.
         join(GENOMAD_ANNOTATE.out.outdir)
@@ -41,38 +44,46 @@ workflow PROPHAGE_ANALYSIS {
 
     PROPHAGEMARKERS ( ch_updategbk )
 
-    // PHISPY
-    PVOGDOWNLOAD()
-    PHISPY(ch_gbk, PVOGDOWNLOAD.out.pvogs_db)
+    // PROPHAGE PARSER
+    PROPHAGEMARKERS.out.gbk
+            .join( GENOMAD_FINDPROVIRUSES.out.provirus )
+            .join( GENOMAD_FINDPROVIRUSES.out.taxonomy )
+            .set { ch_prophageparser }
 
-    ch_versions = ch_versions.mix(PHISPY.out.versions)
+    PROPHAGEPARSER ( ch_prophageparser )
 
-    // PROCESS PHISPY
-    PROCESS_PHISPY(PHISPY.out.phage_gbk, PHISPY.out.phage_fasta, PHISPY.out.prophage_tsv)
+    // // PHISPY
+    // PVOGDOWNLOAD()
+    // PHISPY(ch_gbk, PVOGDOWNLOAD.out.pvogs_db)
 
-    // CREATE CHANNEL TO LINEAR VISUALIZATION
-    PROCESS_PHISPY.out.gbk
-            .flatMap { meta, gbk_files ->
-            if (gbk_files instanceof List) {
-                // If gbk_files is a list, process each file
-                return gbk_files.collect { gbk_file ->
-                    def pp_meta = [id: gbk_file.name.tokenize('.')[0]]
-                    [meta, pp_meta, gbk_file]
-                }
-            } else {
-                // If gbk_files is a single file, process it directly
-                def pp_meta = [id: gbk_files.name.tokenize('.')[0]]
-                return [[meta, pp_meta, gbk_files]]
-            }
-        }.set { ch_pplin }
+    // ch_versions = ch_versions.mix(PHISPY.out.versions)
 
-    // VISUALIZATION (LINEAR)
-    VISUALIZE_LINEAR ( ch_pplin )
+    // // PROCESS PHISPY
+    // PROCESS_PHISPY(PHISPY.out.phage_gbk, PHISPY.out.phage_fasta, PHISPY.out.prophage_tsv)
+
+    // // CREATE CHANNEL TO LINEAR VISUALIZATION
+    // PROCESS_PHISPY.out.gbk
+    //         .flatMap { meta, gbk_files ->
+    //         if (gbk_files instanceof List) {
+    //             // If gbk_files is a list, process each file
+    //             return gbk_files.collect { gbk_file ->
+    //                 def pp_meta = [id: gbk_file.name.tokenize('.')[0]]
+    //                 [meta, pp_meta, gbk_file]
+    //             }
+    //         } else {
+    //             // If gbk_files is a single file, process it directly
+    //             def pp_meta = [id: gbk_files.name.tokenize('.')[0]]
+    //             return [[meta, pp_meta, gbk_files]]
+    //         }
+    //     }.set { ch_pplin }
+
+    // // VISUALIZATION (LINEAR)
+    // VISUALIZE_LINEAR ( ch_pplin )
 
     emit:
-    prophages      = PROCESS_PHISPY.out.gbk           // channel: [ val(meta), [ pp_*gbk ] ]
-    summary        = PROCESS_PHISPY.out.summary       // channel: [ val(meta), [ prophage_summary.tsv ] ]
-
-    versions = ch_versions                     // channel: [ versions.yml ]
+    genomic_gbk    = PROPHAGEMARKERS.out.gbk          // channel: [ val(meta), [ gbk ] ]
+    summary        = PROPHAGEPARSER.out.summary      // channel: [ val(meta), [ prophage_summary.tsv ] ]
+    gbk            = PROPHAGEPARSER.out.gbk          // channel: [ val(meta), [ prophage_*.gbk ] ]
+    versions       = ch_versions                      // channel: [ versions.yml ]
 }
 

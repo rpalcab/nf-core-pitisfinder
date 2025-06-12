@@ -127,7 +127,7 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix( ISESCAN.out.versions )
 
         ch_summary = ch_summary
-                        .join(ISESCAN.out.summary, remainder: true)
+                        .join( ISESCAN.out.summary, remainder: true )
                         .map { meta, summary_list, gbk_list, summary ->
                             summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, file_list, summary_list, gbk_list ]
                     }
@@ -145,9 +145,10 @@ workflow PITISFINDER {
         ch_versions = ch_versions.mix(PROPHAGE_ANALYSIS.out.versions)
 
         ch_summary = ch_summary
-                        .join(PROPHAGE_ANALYSIS.out.summary, remainder: true)
-                        .map { meta, summary_list, gbk_list, summary ->
-                            summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, summary_list, gbk_list ]
+                        .join( PROPHAGE_ANALYSIS.out.summary, remainder: true )
+                        .join( PROPHAGE_ANALYSIS.out.genomic_gbk, remainder: true )
+                        .map { meta, summary_list, gbk_list, summary, genomic_gbk ->
+                            summary ? [ meta, summary_list + [ summary ], gbk_list + [ genomic_gbk ] ] : [ meta, summary_list, gbk_list ]
                     }
     }
 

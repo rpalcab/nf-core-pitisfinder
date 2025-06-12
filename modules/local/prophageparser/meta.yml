@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
-name: "plasmidmarkers"
+name: "prophageparser"
 ## TODO nf-core: Add a description of the module and list keywords
 description: write your description here
 keywords:
@@ -8,7 +8,7 @@ keywords:
   - example
   - genomics
 tools:
-  - "plasmidmarkers":
+  - "prophageparser":
       ## TODO nf-core: Add a description and other details for the software below
       description: ""
       homepage: ""

@@ -52,10 +52,9 @@ workflow INTEGRON_ANALYSIS {
     VISUALIZE_LINEAR ( ch_vislin )
 
     emit:
-    integrons      = INTEGRONFINDER.out.integrons     // channel: [ val(meta), [ *.integrons ] ]
     summary        = INTEGRON_PARSER.out.summary      // channel: [ val(meta), [ integron_summary.tsv ] ]
     gbk            = INTEGRON_PARSER.out.gbk          // channel: [ val(meta), [ int_*.gbk ] ]
     genomic_gbk    = INTEGRONMARKERS.out.gbk          // channel: [ val(meta), [ gbk ] ]
-    versions = ch_versions                     // channel: [ versions.yml ]
+    versions       = ch_versions                      // channel: [ versions.yml ]
 }
 
