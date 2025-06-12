@@ -8,10 +8,11 @@ process VISUALIZE_LINEAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(integron), path(gbk)
+    tuple val(meta), val(mge), path(gbk)
+    val(outdir)
 
     output:
-    tuple val(meta), val(integron), path("${integron.id}.png"), emit: png
+    tuple val(meta), val(mge), path("${outdir}/${mge.id}.png"), emit: png
     //path "versions.yml"           , emit: versions
 
     when:
@@ -21,13 +22,14 @@ process VISUALIZE_LINEAR {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    linear_plot.py -i $gbk -o ${integron.id}.png
+    mkdir -p $outdir
+    linear_plot.py -i $gbk -o $outdir/${mge.id}.png
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${integron.id}.png
+    touch ${mge.id}.png
     """
 }

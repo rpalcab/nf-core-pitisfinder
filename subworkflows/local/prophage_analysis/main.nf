@@ -61,24 +61,25 @@ workflow PROPHAGE_ANALYSIS {
     // // PROCESS PHISPY
     // PROCESS_PHISPY(PHISPY.out.phage_gbk, PHISPY.out.phage_fasta, PHISPY.out.prophage_tsv)
 
-    // // CREATE CHANNEL TO LINEAR VISUALIZATION
-    // PROCESS_PHISPY.out.gbk
-    //         .flatMap { meta, gbk_files ->
-    //         if (gbk_files instanceof List) {
-    //             // If gbk_files is a list, process each file
-    //             return gbk_files.collect { gbk_file ->
-    //                 def pp_meta = [id: gbk_file.name.tokenize('.')[0]]
-    //                 [meta, pp_meta, gbk_file]
-    //             }
-    //         } else {
-    //             // If gbk_files is a single file, process it directly
-    //             def pp_meta = [id: gbk_files.name.tokenize('.')[0]]
-    //             return [[meta, pp_meta, gbk_files]]
-    //         }
-    //     }.set { ch_pplin }
+    // CREATE CHANNEL TO LINEAR VISUALIZATION
+    PROPHAGEPARSER.out.gbk
+            .flatMap { meta, gbk_files ->
+            if (gbk_files instanceof List) {
+                // If gbk_files is a list, process each file
+                return gbk_files.collect { gbk_file ->
+                    def pp_meta = [id: gbk_file.name.tokenize('.')[0]]
+                    [meta, pp_meta, gbk_file]
+                }
+            } else {
+                // If gbk_files is a single file, process it directly
+                def pp_meta = [id: gbk_files.name.tokenize('.')[0]]
+                return [[meta, pp_meta, gbk_files]]
+            }
+        }.set { ch_pplin }
 
-    // // VISUALIZATION (LINEAR)
-    // VISUALIZE_LINEAR ( ch_pplin )
+    // VISUALIZATION (LINEAR)
+    ch_outvisualize = Channel.value('prophages/summary/')
+    VISUALIZE_LINEAR ( ch_pplin, ch_outvisualize )
 
     emit:
     genomic_gbk    = PROPHAGEMARKERS.out.gbk          // channel: [ val(meta), [ gbk ] ]

@@ -37,8 +37,23 @@ def main():
         'Pc': "#FFE119",
         'Pint': "#46F0F0",
         'attI': "#F58230",
-        'attC': "#F032E6"
-        # Prophages
+        'attC': "#F032E6",
+
+        # Prophages (someday...)
+        #TODO: When functional annotation is implemented, uncomment
+        'Integrase': "#3CB44B",
+        'Phage protein': "#F58230"
+        # 'Assembly': "#1F77B4",
+        # 'Baseplate': "#AEC7E8",
+        # 'Coat': "#FF7F0E",
+        # 'Integration': "#9467BD",
+        # 'Lysis': "#D62728",
+        # 'Other': "#7F7F7F",
+        # 'Other (structural)': "#BCBD22",
+        # 'Portal': "#17BECF",
+        # 'Replication': "#E377C2",
+        # 'Tail': "#8C564B",
+        # 'Terminase': "#2CA02C"
         # ICEs
     }
 
@@ -59,8 +74,12 @@ def main():
     for feature in features:
         if feature.qualifiers.get('mge_element', [""])[0] == "yes":
             tag = feature.qualifiers['tag'][0]
-            if tag in d_tag:
+            if tag in d_tag and tag != "Phage protein":
                 track.add_features(feature, label_type='tag', fc=d_tag[tag], ls="none")
+                legend_elements.add(tag)
+            #TODO: When functional annotation is implemented, remove this conditional block
+            elif tag in d_tag and tag == "Phage protein":
+                track.add_features(feature, label_type='product', fc=d_tag[tag], ls="none")
                 legend_elements.add(tag)
 
         # General CDS
@@ -99,6 +118,9 @@ def main():
         'Pint': (d_tag['Pint'], None, 'Integron promoter'),
         'attI': (d_tag['attI'], None, 'attI site'),
         'attC': (d_tag['attC'], None, 'attC site'),
+        #TODO: When functional annotation is implemented, modify to match new markers
+        'Integrase': (d_tag['Integrase'], None, 'Integrase'),
+        'Phage protein': (d_tag['Phage protein'], None, 'Phage protein'),
         'CDS': ("#0082C8", None, 'CDS'),
         'AMR': ("#0082C8", '//', 'AMR gene'),
         'VF': ("#CF0B0B", None, 'VF gene'),
@@ -108,6 +130,8 @@ def main():
     # Create handles only for present elements in consistent order
     ordered_keys = [
         'intI', 'Pc', 'Pint', 'attI', 'attC',
+        #TODO: When functional annotation is implemented, modify to match new markers
+        'Integrase', 'Phage protein',
         'AMR', 'VF', 'CDS', 'hypothetical'
     ]
     legend_handles = []

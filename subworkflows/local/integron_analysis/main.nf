@@ -49,7 +49,8 @@ workflow INTEGRON_ANALYSIS {
     }.set { ch_vislin }
 
     // VISUALIZATION (LINEAR)
-    VISUALIZE_LINEAR ( ch_vislin )
+    ch_outvisualize = Channel.value('integrons/summary/')
+    VISUALIZE_LINEAR ( ch_vislin, ch_outvisualize )
 
     emit:
     summary        = INTEGRON_PARSER.out.summary      // channel: [ val(meta), [ integron_summary.tsv ] ]
