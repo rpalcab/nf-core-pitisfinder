@@ -85,7 +85,7 @@ def main():
         # General CDS
         elif feature.type == "CDS":
             if 'AMR' in feature.qualifiers.get('tag', [''])[0]:
-                track.add_features(feature, hatch='//', fc="#0082C8", label_type="gene", ls="none")
+                track.add_features(feature, hatch='///', fc="#0082C8", label_type="gene", ls="none")
                 legend_elements.add('AMR')
             if 'VF' in feature.qualifiers.get('tag', [''])[0]:
                 track.add_features(feature, fc="#CF0B0B", label_type="gene", ls="none")
@@ -122,7 +122,7 @@ def main():
         'Integrase': (d_tag['Integrase'], None, 'Integrase'),
         'Phage protein': (d_tag['Phage protein'], None, 'Phage protein'),
         'CDS': ("#0082C8", None, 'CDS'),
-        'AMR': ("#0082C8", '//', 'AMR gene'),
+        'AMR': ("#0082C8", '///', 'AMR gene'),
         'VF': ("#CF0B0B", None, 'VF gene'),
         'hypothetical': ("grey", None, 'Hypothetical gene'),
     }

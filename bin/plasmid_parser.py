@@ -73,7 +73,7 @@ def extract_plasmid_row(df: pd.DataFrame, value: str) -> pd.Series:
     filtered = df[df['primary_cluster_id'] == value]
     return filtered
 
-def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List) -> Dict[str, any]:
+def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List, vf_genes: List) -> Dict[str, any]:
     return {
         'sample': mrow['sample_id'],
         'contig': ','.join(contigs),
@@ -93,7 +93,8 @@ def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, 
         'secondary_cluster_id': mrow.get('secondary_cluster_id'),
         'mash_neighbor_identification': mrow.get('mash_neighbor_identification'),
         'mash_neighbor_distance': mrow.get('mash_neighbor_distance'),
-        'AMR': ','.join(amr_genes)
+        'AMR': ','.join(amr_genes),
+        'VF': ','.join(vf_genes)
     }
 
 def main():
@@ -143,8 +144,15 @@ def main():
                 gene_name = feature.qualifiers.get("gene", [""])[0]
                 amr_genes.append(gene_name)
 
+    vf_genes = []
+    for record in selected_records:
+        for feature in record.features:
+            if feature.type == "CDS" and 'VF' in feature.qualifiers.get('tag', [""]):
+                gene_name = feature.qualifiers.get("gene", [""])[0]
+                vf_genes.append(gene_name)
+
     # Retrieve report info
-    info = build_info(mobt_filt.iloc[0], contigs, qrow, prow, amr_genes)
+    info = build_info(mobt_filt.iloc[0], contigs, qrow, prow, amr_genes, vf_genes)
     df_report = pd.DataFrame([info])
 
     # Save report

@@ -22,6 +22,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
     outname = row['Name']
     contig_id = row['Contig']
     amr_list = []
+    vf_list = []
     new_features = []
 
     for record in SeqIO.parse(input_gbk, "genbank"):
@@ -46,6 +47,9 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
             if feature.type == "CDS" and "AMR" in feature.qualifiers.get("tag", [""]):
                 amr_list.append(feature.qualifiers.get("gene", [""])[0])
 
+            if feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
+                vf_list.append(feature.qualifiers.get("gene", [""])[0])
+
             new_features.append(SeqFeature(location=new_location, type=feature.type, qualifiers=new_qualifiers))
 
         new_record = SeqRecord(
@@ -66,6 +70,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
 
         row = row.copy()
         row['AMR'] = ';'.join(amr_list)
+        row['VF'] = ';'.join(vf_list)
         return row, outname
 
     raise ValueError(f"Contig ID '{contig_id}' not found in {input_gbk}")
@@ -73,12 +78,9 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
 
 def reformat_tables(df_provirus, df_taxonomy):
     df_info = df_provirus.merge(df_taxonomy, on="seq_name")
-    df_info.rename(columns={'source_seq': 'Contig',
-                    'start': 'Start',
-                    'end': 'End',
-                    'length': 'Size',
-                    'taxid': 'Taxid',
-                    'lineage': 'Lineage'
+    df_info.columns = [c.capitalize() for c in df_info.columns]
+    df_info.rename(columns={'Source_seq': 'Contig',
+                    'Length': 'Size'
                     }, inplace=True)
 
     df_info['Sample'] = sample
@@ -107,7 +109,7 @@ if __name__ == "__main__":
 
     df_info = reformat_tables(df_provirus, df_taxonomy)
 
-    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Size', 'Start', 'End', 'AMR']
+    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Size', 'Start', 'End', 'AMR', 'VF']
     summary_records = []
 
     for _, row in df_info.iterrows():

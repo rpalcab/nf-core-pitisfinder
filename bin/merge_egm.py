@@ -87,8 +87,9 @@ def main():
         # read with pandas
         df = pd.read_table(tbl_path, dtype=str)
 
+
         # normalize column names (uppercase first letter)
-        df.columns = [c.capitalize() for c in df.columns]
+        # df.columns = [c.capitalize() for c in df.columns]
 
         # warn if contigs not in GenBank
         if "Contig" in df.columns:
@@ -98,13 +99,8 @@ def main():
                     f"{len(missing)} contigs in {tbl_path.name} not found in GenBank: {', '.join(list(missing))}"
                 )
 
-        # ensure AMR column exists
-        for col in ["Name", "AMR"]:
-            if col not in df.columns:
-                df[col] = ""
-
         # pick and rename the needed columns
-        df2 = df[["Contig", "Start", "End", "Name", "AMR"]].copy()
+        df2 = df[["Contig", "Start", "End", "Name", "AMR", "VF"]].copy()
         df2["Sample"] = args.sample
         df2["MGE"] = mge
 
@@ -128,7 +124,7 @@ def main():
                 logger.error(f"Could not create MGE feature from row: {row.to_dict()}\n{e}")
 
         # reorder
-        df2 = df2[["Sample", "Contig", "Start", "End", "MGE", "Name", "AMR"]]
+        df2 = df2[["Sample", "Contig", "Start", "End", "MGE", "Name", "AMR", "VF"]]
         merged.append(df2)
 
     # 3) concatenate and write out
