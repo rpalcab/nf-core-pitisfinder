@@ -1,4 +1,4 @@
-process VISUALIZE_CIRCULAR {
+process MERGEEGM {
     tag "$meta.id"
     label 'process_single'
 
@@ -8,23 +8,32 @@ process VISUALIZE_CIRCULAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(plasmid_name), path(gbk), val(args)
+    tuple val(meta), path(tsv_list), path(gbk)
 
     output:
-    tuple val(meta), val(plasmid_name), path("*.png"), emit: png
+    tuple val(meta), path("${meta.id}_summary.gbk"), emit: gbk
+    tuple val(meta), path("${meta.id}_summary.tsv"), emit: tsv, optional: true
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tsv_str = tsv_list.join(',')
+    def tsv_opt = tsv_str ? "-t ${tsv_str}" : ""
     """
-    circos_plot.py -i $gbk $args -o ${plasmid_name}.png
+    merge_egm.py \\
+        -s $prefix \\
+        -g $gbk \\
+        ${tsv_opt} \\
+        -o ${prefix}_summary
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${plasmid_name}.png
+    touch ${prefix}_summary.gbk
+    touch ${prefix}_summary.tsv
     """
 }

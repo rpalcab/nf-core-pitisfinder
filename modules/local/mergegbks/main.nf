@@ -1,4 +1,4 @@
-process VISUALIZE_CIRCULAR {
+process MERGEGBKS {
     tag "$meta.id"
     label 'process_single'
 
@@ -8,23 +8,26 @@ process VISUALIZE_CIRCULAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(plasmid_name), path(gbk), val(args)
+    tuple val(meta), path(summary_gbk), path(gbk_list)
 
     output:
-    tuple val(meta), val(plasmid_name), path("*.png"), emit: png
+    tuple val(meta), val("${meta.id}"), path("${meta.id}_markers.gbk"), emit: gbk
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def gbk_str = gbk_list.join(',')
+    def gbk_opt = "-u ${gbk_str}"
     """
-    circos_plot.py -i $gbk $args -o ${plasmid_name}.png
+    merge_gbks.py -g ${summary_gbk} $gbk_opt -o ${prefix}_markers.gbk
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${plasmid_name}.png
+    touch ${prefix}_markers.gbk
     """
 }

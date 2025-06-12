@@ -5,7 +5,7 @@ include { COPLA_COPLA           } from '../../../modules/local/copla/copla/main'
 include { PLASMID_PARSER        } from '../../../modules/local/plasmidparser/main'
 include { RENAME_PLASMIDS       } from '../../../modules/local/renameplasmids/main'
 include { PLASMID_SUMMARY       } from '../../../modules/local/plasmidsummary/main'
-include { VISUALIZE_CIRCULAR    } from '../../../modules/local/visualize/circular/main'
+include { VISUALIZE_CIRCULAR } from '../../../modules/local/visualize/circular/main'
 
 workflow PLASMID_ANALYSIS {
 
@@ -80,7 +80,11 @@ workflow PLASMID_ANALYSIS {
     PLASMID_PARSER( ch_plasmidparser )
 
     // VISUALIZATION
-    VISUALIZE_CIRCULAR( PLASMID_PARSER.out.gbk )
+    PLASMID_PARSER.out.gbk.map
+                { meta, plasmid_name, gbk ->
+                return [ meta, plasmid_name, gbk, "-m" ]
+                }.set { ch_visual }
+    VISUALIZE_CIRCULAR( ch_visual )
 
     // CREATE SUMMARY
     PLASMID_PARSER.out.report

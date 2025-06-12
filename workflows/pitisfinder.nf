@@ -8,7 +8,7 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 
-include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
+// include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
 
@@ -17,6 +17,7 @@ include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
 include { INTEGRON_ANALYSIS      } from '../subworkflows/local/integron_analysis'
 include { PROPHAGE_ANALYSIS      } from '../subworkflows/local/prophage_analysis'
 include { ICE_ANALYSIS           } from '../subworkflows/local/ice_analysis'
+include { SAMPLE_SUMMARY         } from '../subworkflows/local/summary'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -167,7 +168,9 @@ workflow PITISFINDER {
     ch_summary.join( MERGE_ANNOTATIONS.out.gbk )
               .set { ch_samplesummary }
 
-    SAMPLESUMMARY(ch_samplesummary)
+    SAMPLE_SUMMARY(ch_samplesummary)
+
+    // SAMPLESUMMARY(ch_samplesummary)
 
 
     //
