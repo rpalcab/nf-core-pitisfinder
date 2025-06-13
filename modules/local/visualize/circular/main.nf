@@ -8,10 +8,10 @@ process VISUALIZE_CIRCULAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(plasmid_name), path(gbk), val(args)
+    tuple val(meta), val(name), path(gbk), val(args), val(outdir)
 
     output:
-    tuple val(meta), val(plasmid_name), path("*.png"), emit: png
+    tuple val(meta), val(name), path("$outdir/*.png"), emit: png
 
     when:
     task.ext.when == null || task.ext.when
@@ -19,12 +19,13 @@ process VISUALIZE_CIRCULAR {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    circos_plot.py -i $gbk $args -o ${plasmid_name}.png
+    mkdir -p $outdir
+    circos_plot.py -i $gbk $args -o $outdir/${name}.png
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${plasmid_name}.png
+    touch ${name}.png
     """
 }

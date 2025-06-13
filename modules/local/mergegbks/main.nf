@@ -11,7 +11,7 @@ process MERGEGBKS {
     tuple val(meta), path(summary_gbk), path(gbk_list)
 
     output:
-    tuple val(meta), val("${meta.id}"), path("${meta.id}_markers.gbk"), emit: gbk
+    tuple val(meta), path("${meta.id}_markers.gbk"), emit: gbk
 
     when:
     task.ext.when == null || task.ext.when

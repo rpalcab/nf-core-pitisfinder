@@ -82,7 +82,7 @@ workflow PLASMID_ANALYSIS {
     // VISUALIZATION
     PLASMID_PARSER.out.gbk.map
                 { meta, plasmid_name, gbk ->
-                return [ meta, plasmid_name, gbk, "-m" ]
+                return [ meta, plasmid_name, gbk, "-m", "plasmids/summary" ]
                 }.set { ch_visual }
     VISUALIZE_CIRCULAR( ch_visual )
 

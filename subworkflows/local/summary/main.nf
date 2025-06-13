@@ -26,8 +26,8 @@ workflow SAMPLE_SUMMARY {
 
     // Create circos plot
     MERGEGBKS.out.gbk.map
-                { meta, name, gbk ->
-                return [ meta, name, gbk, "" ]
+                { meta, gbk ->
+                return [ meta, meta.id, gbk, "", "annotations" ]
                 }.set { ch_visual }
     VISUALIZE_CIRCULAR(ch_visual)
 
