@@ -51,11 +51,22 @@ sampleA,sampleA.fasta,sampleA.gbk
 Now, you can run the pipeline using:
 
 ```bash
-nextflow run nf-core/pitisfinder \
+nextflow pull rpalcab/nf-core-pitisfinder -r dev
+
+nextflow run rpalcab/nf-core-pitisfinder -r dev \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
    --outdir <OUTDIR>
 ```
+
+To run pitisfinder with test data:
+
+```bash
+nextflow run rpalcab/nf-core-pitisfinder -r dev \
+   -profile docker,test \
+   --outdir <OUTDIR>
+```
+
 > [!WARNING]
 > Please be aware that `conda` profile is not available, as not all tools can be installed through Conda.
 
@@ -64,7 +75,7 @@ In addition to default nf-core parameters, **pitisfinder also accepts these inpu
 Local databases (if not provided, they are automatically downloaded):
   --df_db                   [string] Path to DefenseFinder database. See https://github.com/mdmparis/defense-finder/ for mandatory directory structure and content. 
   --copla_db                [string] Path to Copla databases. See https://github.com/santirdnd/COPLA for mandatory directory structure and content. 
-  --phispy_db               [string] Path to pVOG database HMM profiles. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz 
+  --genomad_db              [string] Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz
 ```
 
 ```
