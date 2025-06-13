@@ -4,8 +4,11 @@ Changes in component 'nf-core/phispy'
 Changes in 'phispy/main.nf':
 --- modules/nf-core/phispy/main.nf
 +++ modules/nf-core/phispy/main.nf
-@@ -11,17 +11,17 @@
+@@ -9,19 +9,20 @@
+ 
+     input:
      tuple val(meta), path(gbk)
++    path dbfile
  
      output:
 -    tuple val(meta), path("${prefix}.tsv")                     , emit: coordinates
@@ -33,7 +36,14 @@ Changes in 'phispy/main.nf':
      path "versions.yml"                                        , emit: versions
  
      when:
-@@ -33,19 +33,22 @@
+@@ -29,23 +30,29 @@
+ 
+     script:
+     def args = task.ext.args ?: ''
++    // Add pHHM database if provided
++    def db_arg = dbfile ? "--phmms $dbfile" : ''
++    args += " $db_arg"
+     prefix = task.ext.prefix ?: "${meta.id}"
      // Extract GBK file extension, i.e. .gbff, .gbk.gz
      gbk_extension = gbk.getName() - gbk.getSimpleName()
  
@@ -61,7 +71,7 @@ Changes in 'phispy/main.nf':
  
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
-@@ -60,17 +63,18 @@
+@@ -60,17 +67,18 @@
      if ("$gbk" == "${prefix}${gbk_extension}") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
  
      """

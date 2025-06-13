@@ -14,6 +14,7 @@ process PHIGARO {
 
     output:
     path("${meta.id}/${meta.id}.phigaro.bed")  , optional:true, emit: bed
+    path("${meta.id}/${meta.id}.phigaro.fasta"), optional:true, emit: fasta
     path("${meta.id}/${meta.id}.phigaro.gff3") , optional:true, emit: gff3
     path("${meta.id}/${meta.id}.phigaro.html") , optional:true, emit: html
     path("${meta.id}/${meta.id}.phigaro.tsv")  , optional:true, emit: tsv
@@ -26,12 +27,17 @@ process PHIGARO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    phigaro \\
-        $args \\
-        -f $fasta \\
-        -o $prefix \\
-        -c $config \\
-        -t $task.cpus
+    # Sanity check
+    count_nts.sh $fasta > contig_sizes.txt
+
+    if awk '\$2 > 20000 { found=1 } END { exit !found }' contig_sizes.txt; then
+        phigaro \
+            $args \
+            -f $fasta \
+            -o $prefix \
+            -c $config \
+            -t $task.cpus
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -12,7 +12,7 @@ process MACSYFINDER {
     tuple val(model), path(model_path)
 
     output:
-    tuple val(meta), path("${meta.id}/all_best_solutions.tsv")  , emit: best
+    tuple val(meta), path("all_best_solutions.tsv")  , emit: best
     path "versions.yml"                                         , emit: versions
 
     when:
@@ -28,8 +28,9 @@ process MACSYFINDER {
         --sequence-db $faa \\
         -m $model all \\
         --models-dir $model_path \\
-        -o ${prefix} \\
+        -o tmp/ \\
         -w $task.cpus
+    mv tmp/* .
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -41,8 +42,7 @@ process MACSYFINDER {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    mkdir ${prefix}
-    touch ${prefix}/all_best_solutions.tsv
+    touch all_best_solutions.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

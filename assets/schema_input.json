@@ -20,12 +20,6 @@
                 "pattern": "^\\S+\\.fa(sta)?$",
                 "errorMessage": "Fasta file for isolate assembly must be provided, cannot contain spaces and must have extension '.fasta' or '.fa'"
             },
-            "gff": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.gff3?$"
-            },
             "faa": {
                 "type": "string",
                 "format": "file-path",
@@ -37,14 +31,8 @@
                 "format": "file-path",
                 "exists": true,
                 "pattern": "^\\S+\\.(gbk|gbff)$"
-            },
-            "amr": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.tab$"
             }
         },
-        "required": ["sample", "fasta"]
+        "required": ["sample", "fasta", "faa", "gbk"]
     }
 }

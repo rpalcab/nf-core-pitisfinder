@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/pitisfinder/master/nextflow_schema.json",
     "title": "nf-core/pitisfinder pipeline parameters",
-    "description": "Workflow for the detection, characterization and clustering of bacterial Mobile Genetic Elements (EGMs).",
+    "description": "Workflow for the detection, characterization and clustering of bacterial Mobile Genetic Elements (MGEs).",
     "type": "object",
     "$defs": {
         "input_output_options": {
@@ -29,6 +29,12 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "df_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to DefenseFinder database. See https://github.com/mdmparis/defense-finder/ for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "copla_db": {
                     "type": "string",
                     "format": "directory-path",
@@ -42,28 +48,16 @@
                     "description": "Path to IS database (.fasta). If none is provided, IS will not be performed.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "phigaro_db": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to PHIGARO pvogdatabases. See http://download.ripcm.com/phigaro/ for mandatory directory structure and content.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "phastest_db": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to PHASTEST databases. See https://phastest.ca/databases for mandatory directory structure and content.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "iceberg_db": {
+                "phispy_db": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "Path to ICEBERG 3.0 database (ICE_seq_all.fas). See https://tool2-mml.sjtu.edu.cn/ICEberg3/ for file availability and content.",
+                    "description": "Path to pVOG database HMM profiles. See https://portal.nersc.gov/genomad/index.html for mandatory directory structure and content.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "genomad_db": {
                     "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to Genomad database. See https://portal.nersc.gov/genomad/ for mandatory directory structure and content.",
+                    "format": "file-path",
+                    "description": "Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {

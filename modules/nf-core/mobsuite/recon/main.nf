@@ -11,10 +11,11 @@ process MOBSUITE_RECON {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${meta.id}/chromosome.fasta")    , emit: chromosome
-    tuple val(meta), path("${meta.id}/contig_report.txt")   , emit: contig_report
-    tuple val(meta), path("${meta.id}/plasmid_*.fasta")     , emit: plasmids        , optional: true
-    tuple val(meta), path("${meta.id}/mobtyper_results.txt"), emit: mobtyper_results, optional: true
+    tuple val(meta), path("chromosome.fasta")    , emit: chromosome
+    tuple val(meta), path("contig_report.txt")   , emit: contig_report
+    tuple val(meta), path("plasmid_*.fasta")     , emit: plasmids        , optional: true
+    tuple val(meta), path("mobtyper_results.txt"), emit: mobtyper_results, optional: true
+    tuple val(meta), path("biomarkers.blast.txt"), emit: biomarkers      , optional: true
     path "versions.yml"                                  , emit: versions
 
     when:
@@ -31,12 +32,13 @@ process MOBSUITE_RECON {
     fi
 
     mob_recon \\
-        --infile $fasta_name \\
         $args \\
+        --infile $fasta_name \\
         --num_threads $task.cpus \\
-        --outdir ${meta.id} \\
+        --outdir tmp/ \\
         --sample_id $prefix
-
+    mv tmp/* .
+    
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         mobsuite: \$(echo \$(mob_recon --version 2>&1) | sed 's/^.*mob_recon //; s/ .*\$//')
@@ -45,10 +47,8 @@ process MOBSUITE_RECON {
 
     stub:
     """
-    mkdir -p ${meta.id}
-
-    touch ${meta.id}/chromosome.fasta
-    touch ${meta.id}/contig_report.txt
+    touch chromosome.fasta
+    touch contig_report.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
