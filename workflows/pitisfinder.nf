@@ -165,7 +165,7 @@ workflow PITISFINDER {
     //
     // SAMPLE SUMMARY
     //
-    ch_summary.join( MERGE_ANNOTATIONS.out.gbk )
+    ch_summary.join( ch_gbk )
               .set { ch_samplesummary }
 
     SAMPLE_SUMMARY(ch_samplesummary)
