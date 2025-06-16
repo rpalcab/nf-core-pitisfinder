@@ -11,12 +11,12 @@ process ISESCAN {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("${fasta}.tsv")    , emit: tsv
-    tuple val(meta), path("${fasta}.gff")    , emit: gff
-    tuple val(meta), path("${fasta}.is.fna") , emit: isfna
-    tuple val(meta), path("${fasta}.orf.fna"), emit: orffna
-    tuple val(meta), path("${fasta}.orf.faa"), emit: orffaa
-    tuple val(meta), path("IS_summary.tsv")  , emit: summary
+    tuple val(meta), path("${fasta}.tsv")        , emit: tsv, optional: true
+    tuple val(meta), path("${fasta}.gff")        , emit: gff, optional: true
+    tuple val(meta), path("${fasta}.is.fna")     , emit: isfna, optional: true
+    tuple val(meta), path("${fasta}.orf.fna")    , emit: orffna, optional: true
+    tuple val(meta), path("${fasta}.orf.faa")    , emit: orffaa, optional: true
+    tuple val(meta), path("IS_summary.tsv")      , emit: summary, optional: true
     path "versions.yml"                          , emit: versions
 
     when:
@@ -32,8 +32,9 @@ process ISESCAN {
         --output . \\
         --seqfile $fasta
 
-    cut -f 1,3-5 ${fasta}.tsv | awk -F'\\t' 'BEGIN {OFS="\\t"} NR==1 {print \$0, "AMR\\tVF"; next} {print \$0, "\\t"}' | sed -e 's/seqID/Contig/' -e 's/cluster/Name/' -e 's/isBegin/Start/' -e 's/isEnd/End/' > IS_summary.tsv
-
+    if [ -f ${fasta}.tsv ]; then
+            cut -f 1,3-5 ${fasta}.tsv | awk -F'\\t' 'BEGIN {OFS="\\t"} NR==1 {print \$0, "AMR\\tVF"; next} {print \$0, "\\t"}' | sed -e 's/seqID/Contig/' -e 's/cluster/Name/' -e 's/isBegin/Start/' -e 's/isEnd/End/' > IS_summary.tsv
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
