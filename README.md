@@ -28,7 +28,7 @@
 
 Implemented tools:
 - Plasmids ([`MOBrecon`](github.com/phac-nml/mob-suite/) and [`COPLA`](https://github.com/santirdnd/COPLA))
-- Prophages ([`PhiSpy`](https://github.com/linsalrob/PhiSpy))
+- Prophages ([`geNomad`](https://github.com/apcamargo/genomad))
 - Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
 - Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
 - Integrative Conjugative Elements ([`ICEFinder2`](https://bioinfo-mml.sjtu.edu.cn/index_bioinfo.php))
