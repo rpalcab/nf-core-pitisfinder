@@ -39,20 +39,15 @@ workflow PITISFINDER {
     ch_versions = Channel.empty()
 
     // INITIALIZE SUMMARY CHANNEL
-    ch_samplesheet.map { meta, fasta, faa, gbk ->
+    ch_samplesheet.map { meta, fasta, gbk ->
         return [ meta, [], [] ]
         }.set { ch_summary }
 
     // PREPARE ONLY FASTA CHANNEL
-    ch_samplesheet.map { meta, fasta, faa, gbk ->
+    ch_samplesheet.map { meta, fasta, gbk ->
         return [ meta, fasta ]
         }.set { ch_fasta }
 
-    // PREPARE FAA CHANNEL
-    ch_samplesheet
-        .map { meta, fasta, faa, gbk ->
-            return [ meta, faa ]
-        }.set { ch_faa }
 
     // RES, VIR, DEF ANNOTATION
     RVD_ANNOTATION (
@@ -64,7 +59,7 @@ workflow PITISFINDER {
     RVD_ANNOTATION.out.vf_report
 
     // MERGE GBK AND AMR ANNOTATIONS
-    ch_samplesheet.map {  meta, fasta, faa, gbk ->
+    ch_samplesheet.map {  meta, fasta, gbk ->
         return [ meta, gbk ]
         }
         .join ( RVD_ANNOTATION.out.amr_report )
@@ -75,7 +70,7 @@ workflow PITISFINDER {
     // PREPARE CHANNEL WITH MERGED ANNOTATIONS
     ch_samplesheet
         .join(MERGE_ANNOTATIONS.out.gbk)
-        .map {  meta, fasta, faa, gbk, merged_gbk ->
+        .map {  meta, fasta, gbk, merged_gbk ->
             return [ meta, merged_gbk ]
         }.set { ch_gbk }
 
@@ -157,10 +152,10 @@ workflow PITISFINDER {
     //
     // ICEs
     //
-    if ( !params.skip_ices ) {
-        ICE_ANALYSIS(ch_faa, ch_gbk, PLASMID_ANALYSIS.out.contig_report)
-        ch_versions = ch_versions.mix(ICE_ANALYSIS.out.versions)
-    }
+    // if ( !params.skip_ices ) {
+    //     ICE_ANALYSIS(ch_faa, ch_gbk, PLASMID_ANALYSIS.out.contig_report)
+    //     ch_versions = ch_versions.mix(ICE_ANALYSIS.out.versions)
+    // }
 
     //
     // SAMPLE SUMMARY

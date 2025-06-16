@@ -42,11 +42,23 @@ def get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 # %%
+def get_plot_params(genome_size):
+    # Cap sizes to avoid too-small or too-huge figures
+    base_size = 12
+    scale_factor = np.log10(genome_size / 100000)  # base 6 for 100 kb
+    scale_factor = max(0, min(scale_factor, 5))  # Clamp between 0 and 5
+    figsize = (base_size + scale_factor, base_size + scale_factor)
+    dpi = int(300 + 50 * scale_factor)
+    return tuple(figsize), dpi
+
+# %%
 def main():
     args = get_args()
 
     gbk = Genbank(args.input)
     seqid2size = gbk.get_seqid2size()
+    genome_size = sum(seqid2size.values())
+    figsize, dpi = get_plot_params(genome_size)
     space = 0 if len(seqid2size) == 1 else 2
     circos = Circos(sectors=seqid2size, space=space)
     circos.text(f"{gbk.name}", size=12, r=150)
@@ -230,7 +242,7 @@ def main():
             label_pos_list, negative_gc_skews, 0, vmin=vmin, vmax=vmax, color="purple"
         )
 
-    fig = circos.plotfig()
+    fig = circos.plotfig(figsize=figsize)
     # Add legend
     handles = []
 
@@ -269,7 +281,7 @@ def main():
 
     circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=8)
 
-    fig.savefig(args.output)
+    fig.savefig(args.output, dpi=dpi)
 
 if __name__ == "__main__":
     main()

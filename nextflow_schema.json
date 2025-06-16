@@ -41,19 +41,6 @@
                     "description": "Path to Copla databases. See https://github.com/santirdnd/COPLA for mandatory directory structure and content.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "is_db": {
-                    "type": "string",
-                    "format": "file-path",
-                    "pattern": "^\\S+\\.fa(sta)?$",
-                    "description": "Path to IS database (.fasta). If none is provided, IS will not be performed.",
-                    "fa_icon": "fas fa-folder-open"
-                },
-                "phispy_db": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "Path to pVOG database HMM profiles. See https://portal.nersc.gov/genomad/index.html for mandatory directory structure and content.",
-                    "fa_icon": "fas fa-folder-open"
-                },
                 "genomad_db": {
                     "type": "string",
                     "format": "file-path",
