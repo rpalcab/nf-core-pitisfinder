@@ -151,7 +151,7 @@ def main():
         labels, label_pos_list = [], []
         for feature in features:
             start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) / 2
+            label_pos = (start + end) // 2
             gene_name = feature.qualifiers.get("gene", [None])[0]
             if gene_name is not None and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
                 tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws = {"weight":"bold"})

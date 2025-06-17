@@ -105,8 +105,10 @@ def main():
     args.out_dir.mkdir(parents=True, exist_ok=True)
     report_out = args.out_dir / f"{args.plasmid_name}.tsv"
     gbk_out = args.out_dir / f"{args.plasmid_name}.gbk"
-    pl_id = args.plasmid_name.split('_')[0]
-
+    if args.plasmid_name.startswith('novel_'):
+        pl_id = '_'.join(args.plasmid_name.split('_')[:2])
+    else:
+        pl_id = args.plasmid_name.split('_')[0]
     # Load tables
     df_mobt = load_tsv(args.mobsuite_typer)
     parts = df_mobt['sample_id'].str.split(':', n=1, expand=True)
@@ -117,9 +119,7 @@ def main():
     # df_res = load_tsv(args.res_file)
 
     mobt_filt = extract_plasmid_row(df_mobt, pl_id)
-    print(df_mobr)
     mobr_filt = extract_plasmid_row(df_mobr, pl_id)
-    print(mobr_filt)
     contigs = mobr_filt['contig_id'].tolist()
 
     qrow = df_qry.iloc[0]
