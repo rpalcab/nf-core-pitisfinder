@@ -81,7 +81,7 @@ def annotate_record(record, df, nts_diff):
     record.features = source_feats + other_feats
     return record
 
-def main(amr, vf, gbk, output, nts_diff):
+def main(amr, vf, df, gbk, output, nts_diff):
     df_amr = load_tab(amr)
     df_vf = load_tab(vf)
     df_annotation = merge_tables(df_amr, df_vf)
@@ -97,8 +97,9 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gbk', required=True, help='Path to input GenBank file')
     parser.add_argument('-a', '--amr', required=True, help='Path to abricate_amr.tab file')
     parser.add_argument('-v', '--vf', required=True, help='Path to abricate_vf.tab file')
+    parser.add_argument('-d', '--df', required=True, help='Path to defense_finder_genes.tsv file')
     parser.add_argument('-o', '--output', default='annotated_output.gbk', help='Output GenBank path')
     parser.add_argument('-n', '--nts_diff', default=15, help='Allowed N nucleotide overlapping (default: 15)')
     args = parser.parse_args()
 
-    main(args.amr, args.vf, args.gbk, args.output, args.nts_diff)
+    main(args.amr, args.vf, args.df, args.gbk, args.output, args.nts_diff)

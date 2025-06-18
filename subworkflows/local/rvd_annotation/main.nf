@@ -21,25 +21,25 @@ workflow RVD_ANNOTATION {
     ABRICATE_RUN_VFDB ( ch_fasta, [], 'vfdb' )
     ch_versions = ch_versions.mix( ABRICATE_RUN_VFDB.out.versions.first() )
 
-    // //DF
-    // ch_dfdb = Channel.empty()
-    // if (!df_db){
-    //     DEFENSEFINDER_UPDATE ()
-    //     ch_dfdb = DEFENSEFINDER_UPDATE.out.db
-    //     ch_versions = ch_versions.mix( DEFENSEFINDER_UPDATE.out.versions )
-    // } else {
-    //     ch_dfdb = Channel.value(file(df_db))
-    // }
-    // DEFENSEFINDER_RUN (
-    //     ch_fasta,
-    //     ch_dfdb
-    // )
-    // ch_versions = ch_versions.mix( DEFENSEFINDER_RUN.out.versions.first() )
+    //DF
+    ch_dfdb = Channel.empty()
+    if (!df_db){
+        DEFENSEFINDER_UPDATE ()
+        ch_dfdb = DEFENSEFINDER_UPDATE.out.db
+        ch_versions = ch_versions.mix( DEFENSEFINDER_UPDATE.out.versions )
+    } else {
+        ch_dfdb = Channel.value(file(df_db))
+    }
+    DEFENSEFINDER_RUN (
+        ch_fasta,
+        ch_dfdb
+    )
+    ch_versions = ch_versions.mix( DEFENSEFINDER_RUN.out.versions.first() )
 
     emit:
     amr_report      = ABRICATE_RUN_CARD.out.report      // channel: [ val(meta), [ report ] ]
-    vf_report      = ABRICATE_RUN_VFDB.out.report      // channel: [ val(meta), [ report ] ]
-    // df_report      = DEFENSEFINDER_RUN.out.systems      // channel: [ val(meta), [ report ] ]
+    vf_report      = ABRICATE_RUN_VFDB.out.report       // channel: [ val(meta), [ report ] ]
+    df_report      = DEFENSEFINDER_RUN.out.genes        // channel: [ val(meta), [ report ] ]
 
     versions = ch_versions                     // channel: [ versions.yml ]
 }

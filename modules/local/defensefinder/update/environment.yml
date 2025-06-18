@@ -4,4 +4,4 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - "bioconda::defense-finder=2.0.0"
+  - "bioconda::defense-finder=2.0.1"

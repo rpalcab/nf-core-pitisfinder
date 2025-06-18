@@ -63,6 +63,7 @@ workflow PITISFINDER {
         }
         .join ( RVD_ANNOTATION.out.amr_report )
         .join ( RVD_ANNOTATION.out.vf_report )
+        .join ( RVD_ANNOTATION.out.df_report )
         .set { ch_mergeann }
     MERGE_ANNOTATIONS ( ch_mergeann )
 
