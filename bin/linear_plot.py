@@ -58,7 +58,16 @@ def main():
     }
 
     # Data setup
-    gv = GenomeViz(fig_track_height=0.7, feature_track_ratio=0.5, track_align_type="center")
+    # Calculate dynamic plot width based on sequence length
+    seq_len = gbk.get_seqid2size()[gbk.records[0].id]
+
+    # Parameters you can tune
+    base_width = 15       # Minimum width
+    scale_factor = 0.0005 # Increase to reduce overlap (more space per bp)
+
+    plot_width = max(base_width, seq_len * scale_factor)
+
+    gv = GenomeViz(fig_width=plot_width, fig_track_height=0.7, feature_track_ratio=0.5, track_align_type="center")
     gv.set_scale_bar(ymargin=0.5)
 
     track = gv.add_feature_track(gbk.records[0].id, gbk.get_seqid2size(), align_label=False)
@@ -72,7 +81,7 @@ def main():
     for feature in features:
         if feature.qualifiers.get('mge_element', [""])[0] == "yes":
             product = feature.qualifiers.get('product', [''])[0]
-            truncated_product = (product[:51] + '...') if len(product) > 50 else product
+            truncated_product = (product[:41] + '...') if len(product) > 50 else product
             feature.qualifiers['product'] = [truncated_product]
             tag = feature.qualifiers['tag'][0]
             if tag in d_tag and tag != "Phage protein":
@@ -98,7 +107,6 @@ def main():
                 track.add_features(feature, label_type="gene", fc="#0082C8", ls="none")
                 legend_elements.add('CDS')
 
-    # GCskew and content
     fig = gv.plotfig()
 
     # Dynamic legend creation
