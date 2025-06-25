@@ -36,13 +36,13 @@ def main():
         'intI': "#3CB44B",
         'Pc': "#FFE119",
         'Pint': "#46F0F0",
-        'attI': "#F58230",
+        'attI': "#78608F",
         'attC': "#F032E6",
 
         # Prophages (someday...)
         #TODO: When functional annotation is implemented, uncomment
         'Integrase': "#3CB44B",
-        'Phage protein': "#F58230"
+        'Phage protein': "#ECBD56"
         # 'Assembly': "#1F77B4",
         # 'Baseplate': "#AEC7E8",
         # 'Coat': "#FF7F0E",
@@ -62,8 +62,6 @@ def main():
     gv.set_scale_bar(ymargin=0.5)
 
     track = gv.add_feature_track(gbk.records[0].id, gbk.get_seqid2size(), align_label=False)
-    track.add_subtrack(name="GCcontent", ylim=(0, 100))
-    track.add_subtrack(name="GCskew", ylim=(-1, 1))
     track.add_sublabel()
 
     # Track which legend elements are used
@@ -73,6 +71,9 @@ def main():
     features = gbk.extract_features(feature_type=['CDS', 'regulatory'])
     for feature in features:
         if feature.qualifiers.get('mge_element', [""])[0] == "yes":
+            product = feature.qualifiers.get('product', [''])[0]
+            truncated_product = (product[:51] + '...') if len(product) > 50 else product
+            feature.qualifiers['product'] = [truncated_product]
             tag = feature.qualifiers['tag'][0]
             if tag in d_tag and tag != "Phage protein":
                 track.add_features(feature, label_type='tag', fc=d_tag[tag], ls="none")
@@ -85,9 +86,9 @@ def main():
         # General CDS
         elif feature.type == "CDS":
             if 'AMR' in feature.qualifiers.get('tag', [''])[0]:
-                track.add_features(feature, hatch='///', fc="#0082C8", label_type="gene", ls="none")
+                track.add_features(feature, fc="#F58230", label_type="gene", ls="none")
                 legend_elements.add('AMR')
-            if 'VF' in feature.qualifiers.get('tag', [''])[0]:
+            elif 'VF' in feature.qualifiers.get('tag', [''])[0]:
                 track.add_features(feature, fc="#CF0B0B", label_type="gene", ls="none")
                 legend_elements.add('VF')
             elif 'hypothetical' in feature.qualifiers.get('product', [''])[0].lower():
@@ -99,17 +100,6 @@ def main():
 
     # GCskew and content
     fig = gv.plotfig()
-    win_size = 100
-    step_size = 50
-    gc_content_subtrack = track.get_subtrack("GCcontent")
-    gc_skew_subtrack = track.get_subtrack("GCskew")
-    seq = gbk.get_seqid2seq()[gbk.records[0].id]
-    x, gc_content = gbk.calc_gc_content(window_size=win_size, step_size=step_size, seq=seq)
-    x = track.segments[0].transform_coord(x)
-    gc_content_subtrack.ax.fill_between(x, gc_content, color="grey")
-    x, gc_skew = gbk.calc_gc_skew(window_size=win_size, step_size=step_size, seq=seq)
-    x = track.segments[0].transform_coord(x)
-    gc_skew_subtrack.ax.fill_between(x, gc_skew, color="pink")
 
     # Dynamic legend creation
     legend_map = {
@@ -122,7 +112,7 @@ def main():
         'Integrase': (d_tag['Integrase'], None, 'Integrase'),
         'Phage protein': (d_tag['Phage protein'], None, 'Phage protein'),
         'CDS': ("#0082C8", None, 'CDS'),
-        'AMR': ("#0082C8", '///', 'AMR gene'),
+        'AMR': ("#F58230", None, 'AMR gene'),
         'VF': ("#CF0B0B", None, 'VF gene'),
         'hypothetical': ("grey", None, 'Hypothetical gene'),
     }
