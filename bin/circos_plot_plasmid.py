@@ -64,7 +64,7 @@ def main():
     figsize, dpi = get_plot_params(genome_size)
     space = 0 if len(seqid2size) == 1 else 2
     circos = Circos(sectors=seqid2size, space=space)
-    circos.text(f"{gbk.name}", size=12, r=150)
+    circos.text(f"{gbk.name}", size=12, r=125)
 
     seqid2features = gbk.get_seqid2features(feature_type=None)
 
@@ -244,7 +244,7 @@ def main():
             else:
                 handles.append(entry)
 
-    circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=8)
+    circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
 
     fig.savefig(args.output, dpi=dpi)
 
