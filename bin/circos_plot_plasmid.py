@@ -7,7 +7,9 @@ Part of PITISfinder. Processes /tag qualifiers in features (if any)
 
 from pycirclize import Circos
 from pycirclize.parser import Genbank
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 import numpy as np
+import pandas as pd
 import math
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
@@ -17,8 +19,8 @@ from pathlib import Path
 def get_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
-        prog = 'circos_plot.py',
-        description = 'circos_plot.py is part of PITISfinder.'
+        prog = 'circos_plot_plasmid.py',
+        description = 'circos_plot_plasmid.py is part of PITISfinder.'
     )
 
     parser.add_argument(
@@ -28,15 +30,9 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-m', '--mge_elements',
-        action="store_true",
-        help="Plot MGE elements (integrase, MPF, MOB...)"
-    )
-
-    parser.add_argument(
-        "-r", "--mobsuite_report",
-        default=None,
-        help="MOBsuite report with plasmid and chromosome information"
+        '-m', '--mge', required=True,
+        type=Path,
+        help='Required. MGE coordinates table'
     )
 
     parser.add_argument(
@@ -44,7 +40,6 @@ def get_args() -> argparse.Namespace:
         type=Path,
         help='Required. Final output png file'
     )
-
     return parser.parse_args()
 
 # %%
@@ -61,6 +56,8 @@ def get_plot_params(genome_size):
 def main():
     args = get_args()
 
+    df_mge = pd.read_csv(args.mge, sep="\t", header=0)
+
     gbk = Genbank(args.input)
     seqid2size = gbk.get_seqid2size()
     genome_size = sum(seqid2size.values())
@@ -74,8 +71,6 @@ def main():
     feature_presence = {
         "Forward CDS": False,
         "Reverse CDS": False,
-        "tRNA": False,
-        "Plasmid": False,
         "Integron": False,
         "Prophage": False,
         "IS": False,
@@ -90,19 +85,17 @@ def main():
 
     track_info = [
         ("cds_track", (92, 98), "CDS"),
-        ("rna_track", (89, 92), "rRNA/tRNA"),
-        ("pl_track", (86, 89), "Plasmid"),
-        ("int_track", (83, 86), "Integron"),
-        ("ph_track", (80, 83), "Prophage"),
-        ("is_track", (77, 80), "IS"),
-        ("rvd_track", (74, 77), "AMR/VF/DF")
+        ("int_track", (89, 92), "Integron"),
+        ("ph_track", (86, 89), "Prophage"),
+        ("is_track", (83, 86), "IS"),
+        ("rvd_track", (80, 83), "AMR/VF/DF")
     ]
 
     mge_colors = {
-        "MPF": "#911EB4",
-        "oriT": "#F58230",
-        "MOB": "#46F0F0",
-        "Replicon": "#F032E6"
+        "MPF": "#9467BD",
+        "oriT": "#FFBB78",
+        "MOB": "#0F3B5A",
+        "Replicon": "#912A2A"
     }
 
     for sector in circos.sectors:
@@ -110,10 +103,9 @@ def main():
         outer_track = sector.add_track((98, 100))
         outer_track.axis(fc="lightgrey")
 
-        # MGE track (if wanted)
-        if args.mge_elements is True:
-            marker_track = sector.add_track((71, 74), r_pad_ratio=0.1)
-            marker_track.axis(fc="#eaeaea", ec="lightgrey", lw=0.3)
+        # MGE track
+        marker_track = sector.add_track((77, 80), r_pad_ratio=0.1)
+        marker_track.axis(fc="#eaeaea", ec="lightgrey", lw=0.3)
 
         tracks = {'outer_track': outer_track}
 
@@ -158,6 +150,46 @@ def main():
         # Plot CDS (fwd, rev) rRNA, tRNA and MGEs
 
         for feature in features:
+            mge_subset = df_mge[
+                (df_mge["MGE"] != "plasmid") &
+                (df_mge["Contig"] == sector.name)
+            ]
+
+            for _, row in mge_subset.iterrows():
+                start = int(row["Start"])
+                end = int(row["End"])
+                label = str(row["Name"])
+                mge_type = row["MGE"].lower()
+
+                # Create a mock SeqFeature
+                fake_feature = SeqFeature(
+                    FeatureLocation(start, end),
+                    type="MGE",
+                    qualifiers={"label": [label], "type": [mge_type]}
+                )
+
+                if mge_type == "integron":
+                    track = tracks["int_track"]
+                    color = "#FF7F0E"
+                    feature_presence["Integron"] = True
+                elif mge_type == "prophage":
+                    track = tracks["ph_track"]
+                    color = "#17BECF"
+                    feature_presence["Prophage"] = True
+                elif mge_type == "is":
+                    track = tracks["is_track"]
+                    color = "#E27FE4"
+                    feature_presence["IS"] = True
+                else:
+                    continue
+
+                # Plot the fake SeqFeature
+                track.genomic_features([fake_feature], color=color, lw=0.1)
+
+                # Annotate the name on CDS track
+                label_pos = (start + end) // 2
+                tracks["cds_track"].annotate(label_pos, label, label_size=7)
+
             # Gral features
             if feature.type == "CDS" and feature.location.strand == 1:
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc="#0082C8")
@@ -165,45 +197,26 @@ def main():
             elif feature.type == "CDS" and feature.location.strand == -1:
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc="#E6194B")
                 feature_presence["Reverse CDS"] = True
-            elif feature.type == "tRNA":
-                tracks["rna_track"].genomic_features(feature, color="#FFE119", lw=0.1)
-                feature_presence["tRNA"] = True
-
-            # MGEs
-            elif feature.type == "MGE" and 'plasmid' in feature.qualifiers.get('type', []):
-                tracks["pl_track"].genomic_features(feature, color="#911EB4", lw=0.1)
-                feature_presence["Plasmid"] = True
-            elif feature.type == "MGE" and 'integron' in feature.qualifiers.get('type', []):
-                tracks["int_track"].genomic_features(feature, color="#F58230", lw=0.1)
-                feature_presence["Integron"] = True
-            elif feature.type == "MGE" and 'prophage' in feature.qualifiers.get('type', []):
-                tracks["ph_track"].genomic_features(feature, color="#46F0F0", lw=0.1)
-                feature_presence["Prophage"] = True
-            elif feature.type == "MGE" and 'IS' in feature.qualifiers.get('type', []):
-                tracks["is_track"].genomic_features(feature, color="#F032E6", lw=0.1)
-                feature_presence["IS"] = True
 
             # AMR, VF, DF
             if feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#D2F53C", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#2CA02C", lw=0.1)
                 feature_presence["AMR"] = True
             if feature.type == "CDS" and 'VF' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#AA6E28", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#FFD700", lw=0.1)
                 feature_presence["VF"] = True
             if feature.type == "CDS" and 'DF' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#808080", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#7F7F7F", lw=0.1)
                 feature_presence["DF"] = True
 
-            # MGE biomarkers (if wanted)
-            if args.mge_elements is True:
-                if feature.type == "CDS" and 'yes' in feature.qualifiers.get('mge_element', []):
-                    tag = feature.qualifiers['tag'][0]
-                    marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
-                    feature_presence[tag] = True
-                    start, end = int(feature.location.start), int(feature.location.end)
-                    label_pos = (start + end) // 2
-                    gene_name = feature.qualifiers.get("gene", [None])[0]
-                    tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
+            if feature.type == "CDS" and 'yes' in feature.qualifiers.get('mge_element', []):
+                tag = feature.qualifiers['tag'][0]
+                marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
+                feature_presence[tag] = True
+                start, end = int(feature.location.start), int(feature.location.end)
+                label_pos = (start + end) // 2
+                gene_name = feature.qualifiers.get("gene", [None])[0]
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
 
     fig = circos.plotfig(figsize=figsize)
     # Add legend
@@ -212,18 +225,16 @@ def main():
     legend_map = {
         "Forward CDS": Patch(color="#E6194B", label="Forward CDS"),
         "Reverse CDS": Patch(color="#0082C8", label="Reverse CDS"),
-        "tRNA": Patch(color="#FFE119", label="tRNA"),
-        "Plasmid": Patch(color="#911EB4", label="Plasmid"),
-        "Integron": Patch(color="#F58230", label="Integron"),
-        "Prophage": Patch(color="#46F0F0", label="Prophage"),
-        "IS": Patch(color="#F032E6", label="IS"),
-        "AMR": Patch(color="#D2F53C", label="AMR"),
-        "VF": Patch(color="#AA6E28", label="VF"),
-        "DF": Patch(color="#808080", label="DF"),
-        "MPF": Patch(color="#911EB4", label="MPF"),
-        "oriT": Patch(color="#F58230", label="oriT"),
-        "MOB": Patch(color="#46F0F0", label="MOB"),
-        "Replicon": Patch(color="#F032E6", label="Replicon")
+        "Integron": Patch(color="#FF7F0E", label="Integron"),
+        "Prophage": Patch(color="#17BECF", label="Prophage"),
+        "IS": Patch(color="#E27FE4", label="IS"),
+        "AMR": Patch(color="#2CA02C", label="AMR"),
+        "VF": Patch(color="#FFD700", label="VF"),
+        "DF": Patch(color="#030303", label="DF"),
+        "MPF": Patch(color="#9467BD", label="MPF"),
+        "oriT": Patch(color="#FFBB78", label="oriT"),
+        "MOB": Patch(color="#0F3B5A", label="MOB"),
+        "Replicon": Patch(color="#912A2A", label="Replicon")
     }
 
     for key, entry in legend_map.items():

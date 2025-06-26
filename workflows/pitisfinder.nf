@@ -10,6 +10,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_piti
 
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
+include { VISUALIZE_PLASMID      } from '../modules/local/visualize/plasmid/main'
 
 include { RVD_ANNOTATION         } from '../subworkflows/local/rvd_annotation'
 include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
@@ -82,6 +83,8 @@ workflow PITISFINDER {
     //
     // PLASMIDS
     //
+    ch_plasmid_contig_report = Channel.empty()
+
     if ( !params.skip_plasmids ) {
         PLASMID_ANALYSIS(
                     ch_fasta,
@@ -96,6 +99,13 @@ workflow PITISFINDER {
                         .map { meta, summary_list, gbk_list, summary, genomic_gbk ->
                             summary ? [ meta, summary_list + [ summary ], gbk_list + [ genomic_gbk ] ] : [ meta, summary_list, gbk_list ]
                     }
+
+        ch_plasmid_contig_report = PLASMID_ANALYSIS.out.contig_report
+    } else {
+        // Create empty channel with same structure when plasmids are skipped
+        ch_plasmid_contig_report = ch_samplesheet.map { meta, fasta, gbk ->
+            return [ meta, "" ]
+        }
     }
 
     //
@@ -161,12 +171,26 @@ workflow PITISFINDER {
     // SAMPLE SUMMARY
     //
     ch_summary.join( ch_gbk )
+              .join( ch_plasmid_contig_report )
               .set { ch_samplesummary }
 
     SAMPLE_SUMMARY(ch_samplesummary)
 
-    // SAMPLESUMMARY(ch_samplesummary)
+    //
+    // PLASMID VISUALIZATION
+    //
+    if ( !params.skip_plasmids ) {
+        PLASMID_ANALYSIS.out.plasmid_gbk
+            .groupTuple(by: 0)
+            .join( SAMPLE_SUMMARY.out.tsv )
+            .transpose()
+            .map { meta, plasmid_name, gbk_file, summary_tsv ->
+                return [meta, plasmid_name, gbk_file, summary_tsv]
+            }
+            .set { ch_visual }
 
+        VISUALIZE_PLASMID( ch_visual )
+    }
 
     //
     // Collate and save software versions

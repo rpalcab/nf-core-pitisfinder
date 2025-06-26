@@ -5,7 +5,7 @@ include { COPLA_COPLA           } from '../../../modules/local/copla/copla/main'
 include { PLASMID_PARSER        } from '../../../modules/local/plasmidparser/main'
 include { RENAME_PLASMIDS       } from '../../../modules/local/renameplasmids/main'
 include { PLASMID_SUMMARY       } from '../../../modules/local/plasmidsummary/main'
-include { VISUALIZE_CIRCULAR } from '../../../modules/local/visualize/circular/main'
+include { VISUALIZE_PLASMID     } from '../../../modules/local/visualize/plasmid/main'
 
 workflow PLASMID_ANALYSIS {
 
@@ -79,12 +79,12 @@ workflow PLASMID_ANALYSIS {
 
     PLASMID_PARSER( ch_plasmidparser )
 
-    // VISUALIZATION
-    PLASMID_PARSER.out.gbk.map
-                { meta, plasmid_name, gbk ->
-                return [ meta, plasmid_name, gbk, "-m", "plasmids/summary" ]
-                }.set { ch_visual }
-    VISUALIZE_CIRCULAR( ch_visual )
+    // // VISUALIZATION
+    // PLASMID_PARSER.out.gbk.map
+    //             { meta, plasmid_name, gbk ->
+    //             return [ meta, plasmid_name, gbk ]
+    //             }.set { ch_visual }
+    // VISUALIZE_PLASMID( ch_visual )
 
     // CREATE SUMMARY
     PLASMID_PARSER.out.report
@@ -115,6 +115,7 @@ workflow PLASMID_ANALYSIS {
     contig_report   = MOBSUITE_RECON.out.contig_report  // channel: [ val(meta), contig_report ]
     summary         = PLASMID_SUMMARY.out.summary       // channel: [ val(meta), summary ]
     genomic_gbk     = PLASMIDMARKERS.out.gbk            // channel: [ val(meta), gbk ]
+    plasmid_gbk     = PLASMID_PARSER.out.gbk            // channel: [ val(meta), plasmid_name, gbk ]
     versions        = ch_versions                       // channel: [ versions.yml ]
 }
 
