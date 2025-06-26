@@ -64,12 +64,10 @@ def main():
     circos.text(f"{gbk.name}", size=12, r=150)
 
     seqid2features = gbk.get_seqid2features(feature_type=None)
-    seqid2seq = gbk.get_seqid2seq()
 
     feature_presence = {
         "Forward CDS": False,
         "Reverse CDS": False,
-        "rRNA": False,
         "tRNA": False,
         "Plasmid": False,
         "Integron": False,
@@ -81,9 +79,7 @@ def main():
         "MPF": False,
         "oriT": False,
         "MOB": False,
-        "Replicon": False,
-        "GC Content": True,
-        "GC Skew": True,
+        "Replicon": False
     }
 
     track_info = [
@@ -107,18 +103,13 @@ def main():
         #Outer track
         outer_track = sector.add_track((98, 100))
         outer_track.axis(fc="lightgrey")
-        # GC tracks
-        gc_content_track = sector.add_track((65, 70), r_pad_ratio=0.1)
-        gc_skew_track = sector.add_track((55, 65), r_pad_ratio=0.1)
 
         # MGE track (if wanted)
         if args.mge_elements is True:
             marker_track = sector.add_track((71, 74), r_pad_ratio=0.1)
             marker_track.axis(fc="#eaeaea", ec="lightgrey", lw=0.3)
 
-        tracks = {'outer_track': outer_track,
-                  'gc_content_track': gc_content_track,
-                  'gc_skew_track': gc_skew_track                  }
+        tracks = {'outer_track': outer_track}
 
 
         for i, (track_var, radius_range, label) in enumerate(track_info):
@@ -168,9 +159,6 @@ def main():
             elif feature.type == "CDS" and feature.location.strand == -1:
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc="#E6194B")
                 feature_presence["Reverse CDS"] = True
-            elif feature.type == "rRNA":
-                tracks["rna_track"].genomic_features(feature, fc="#3CB44B")
-                feature_presence["rRNA"] = True
             elif feature.type == "tRNA":
                 tracks["rna_track"].genomic_features(feature, color="#FFE119", lw=0.1)
                 feature_presence["tRNA"] = True
@@ -207,40 +195,9 @@ def main():
                     marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
                     feature_presence[tag] = True
                     start, end = int(feature.location.start), int(feature.location.end)
-                    label_pos = (start + end) / 2
+                    label_pos = (start + end) // 2
                     gene_name = feature.qualifiers.get("gene", [None])[0]
                     tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
-
-        # Plot GC content
-        gc_content_track = sector.add_track((55, 60))
-        seq = seqid2seq[sector.name]
-        label_pos_list, gc_contents = gbk.calc_gc_content(seq=seq)
-        gc_contents = gc_contents - gbk.calc_genome_gc_content(seq=gbk.full_genome_seq)
-        positive_gc_contents = np.where(gc_contents > 0, gc_contents, 0)
-        negative_gc_contents = np.where(gc_contents < 0, gc_contents, 0)
-        abs_max_gc_content = np.max(np.abs(gc_contents))
-        vmin, vmax = -abs_max_gc_content, abs_max_gc_content
-        gc_content_track.fill_between(
-            label_pos_list, positive_gc_contents, 0, vmin=vmin, vmax=vmax, color="black"
-        )
-        gc_content_track.fill_between(
-            label_pos_list, negative_gc_contents, 0, vmin=vmin, vmax=vmax, color="grey"
-        )
-
-        # Plot GC skew
-        gc_skew_track = sector.add_track((35, 50))
-
-        label_pos_list, gc_skews = gbk.calc_gc_skew(seq=seq)
-        positive_gc_skews = np.where(gc_skews > 0, gc_skews, 0)
-        negative_gc_skews = np.where(gc_skews < 0, gc_skews, 0)
-        abs_max_gc_skew = np.max(np.abs(gc_skews))
-        vmin, vmax = -abs_max_gc_skew, abs_max_gc_skew
-        gc_skew_track.fill_between(
-            label_pos_list, positive_gc_skews, 0, vmin=vmin, vmax=vmax, color="olive"
-        )
-        gc_skew_track.fill_between(
-            label_pos_list, negative_gc_skews, 0, vmin=vmin, vmax=vmax, color="purple"
-        )
 
     fig = circos.plotfig(figsize=figsize)
     # Add legend
@@ -249,7 +206,6 @@ def main():
     legend_map = {
         "Forward CDS": Patch(color="#E6194B", label="Forward CDS"),
         "Reverse CDS": Patch(color="#0082C8", label="Reverse CDS"),
-        "rRNA": Patch(color="#3CB44B", label="rRNA"),
         "tRNA": Patch(color="#FFE119", label="tRNA"),
         "Plasmid": Patch(color="#911EB4", label="Plasmid"),
         "Integron": Patch(color="#F58230", label="Integron"),
@@ -261,15 +217,7 @@ def main():
         "MPF": Patch(color="#911EB4", label="MPF"),
         "oriT": Patch(color="#F58230", label="oriT"),
         "MOB": Patch(color="#46F0F0", label="MOB"),
-        "Replicon": Patch(color="#F032E6", label="Replicon"),
-        "GC Content": [
-            Line2D([], [], color="black", label="Positive GC Content", marker="^", ms=6, ls="None"),
-            Line2D([], [], color="grey", label="Negative GC Content", marker="v", ms=6, ls="None"),
-        ],
-        "GC Skew": [
-            Line2D([], [], color="olive", label="Positive GC Skew", marker="^", ms=6, ls="None"),
-            Line2D([], [], color="purple", label="Negative GC Skew", marker="v", ms=6, ls="None"),
-        ],
+        "Replicon": Patch(color="#F032E6", label="Replicon")
     }
 
     for key, entry in legend_map.items():
