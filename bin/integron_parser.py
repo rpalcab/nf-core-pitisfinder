@@ -118,7 +118,7 @@ if __name__ == "__main__":
         logging.info(f"{sample}: no complete integrons found.")
         exit()
 
-    columns = ['Sample', 'Contig', 'Name', 'Type', 'Size', 'Start', 'End', 'Integrase'] + [f'Cassette {i+1}' for i in range(args.max_cas)] + ['AMR', 'VF']
+    columns = ['Sample', 'Contig', 'Name', 'Type', 'Length', 'Start', 'End', 'Integrase'] + [f'Cassette {i+1}' for i in range(args.max_cas)] + ['AMR', 'VF']
     summary_df = pd.DataFrame(columns=columns)
 
     df_grouped = df_integrons.groupby(['ID_replicon', 'ID_integron'])

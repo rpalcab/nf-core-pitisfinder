@@ -79,8 +79,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
 def reformat_tables(df_provirus, df_taxonomy):
     df_info = df_provirus.merge(df_taxonomy, on="seq_name")
     df_info.columns = [c.capitalize() for c in df_info.columns]
-    df_info.rename(columns={'Source_seq': 'Contig',
-                    'Length': 'Size'
+    df_info.rename(columns={'Source_seq': 'Contig'
                     }, inplace=True)
 
     df_info['Sample'] = sample
@@ -90,7 +89,7 @@ def reformat_tables(df_provirus, df_taxonomy):
             .str.split(';')
             .apply(lambda x: next((i for i in reversed(x) if i.strip()), ''))
         )
-    return df_info[['Sample', 'Contig', 'Name', 'Size', 'Start', 'End', 'LastLineage']]
+    return df_info[['Sample', 'Contig', 'Name', 'Length', 'Start', 'End', 'LastLineage']]
 
 if __name__ == "__main__":
     args = get_args()
@@ -109,7 +108,7 @@ if __name__ == "__main__":
 
     df_info = reformat_tables(df_provirus, df_taxonomy)
 
-    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Size', 'Start', 'End', 'AMR', 'VF']
+    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Length', 'Start', 'End', 'AMR', 'VF']
     summary_records = []
 
     for _, row in df_info.iterrows():
