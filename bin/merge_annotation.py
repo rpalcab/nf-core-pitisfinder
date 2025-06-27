@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Script to merge GBK and TAB (from Abricate) annotations.
+Script to merge GBK and TAB (from Abricate and DefenseFinder) annotations.
 Adds and modifies features to facilitate parsing and annotation.
 """
 
@@ -15,13 +15,30 @@ def load_tab(tab_path):
     df = pd.read_csv(tab_path, sep="\t", header=0)
     df['START'] = df['START'].astype(int)
     df['END'] = df['END'].astype(int)
-    return df
+    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE']]
 
-def merge_tables(df_amr, df_vr):
-    df_annotation = pd.concat([df_amr, df_vr])
+def reformat_tab(tab_path):
+    df = pd.read_csv(tab_path, sep="\t", header=0)
+    df['%IDENTITY'] = None
+    df['DATABASE'] = 'DefenseFinder'
+    df['RESISTANCE'] = None
+    df['PRODUCT'] = df[['activity', 'type', 'subtype']].agg('_'.join, axis=1)
+    df.rename(columns={
+               'replicon': 'SEQUENCE',
+               'start': 'START',
+               'end': 'END',
+               'frame': 'STRAND',
+               'gene_name': 'GENE',
+               'hit_seq_cov': '%COVERAGE',
+               'hit_gene_ref': 'ACCESSION'
+            }, inplace=True)
+    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE']]
+
+def merge_tables(df_amr, df_vr, df_df):
+    df_annotation = pd.concat([df_amr, df_vr, df_df])
     df_annotation.sort_values(by=['SEQUENCE', 'START'], inplace=True)
     df_annotation['tag'] = ['AMR' if db == 'card' else
-                            ('VF' if db == 'vfdb' else '')
+                            ('VF' if db == 'vfdb' else 'DF')
                             for db in df_annotation['DATABASE']]
     return df_annotation
 
@@ -62,12 +79,12 @@ def annotate_record(record, df, nts_diff):
             'db_xref': [f"{row['DATABASE']}:{row['ACCESSION']}"],
             'product': [row['PRODUCT']],
             'locus_tag': [f"{row['ACCESSION']}_{row['START']}_{row['END']}"],
-            'protein_id': [f"gnl|Abricate|{row['ACCESSION']}_{row['START']}_{row['END']}"],
+            'protein_id': [f"gnl|{row['ACCESSION']}_{row['START']}_{row['END']}"],
             'tag': row['tag'],
             'translation': [translation],
             'codon_start': ['1'],
             'transl_table': ['11'],
-            'inference': [f"Abricate prediction, id% {row['%IDENTITY']}, qcov% {row['%COVERAGE']} to {row['ACCESSION']}"],
+            'inference': [f"id% {row['%IDENTITY']}, qcov% {row['%COVERAGE']} to {row['ACCESSION']}"],
             'gene': [row['GENE']],
             'resistance': [row['RESISTANCE']]
         }
@@ -84,7 +101,12 @@ def annotate_record(record, df, nts_diff):
 def main(amr, vf, df, gbk, output, nts_diff):
     df_amr = load_tab(amr)
     df_vf = load_tab(vf)
-    df_annotation = merge_tables(df_amr, df_vf)
+    print(df_vf)
+    print(df_vf.columns)
+    df_df = reformat_tab(df)
+    print(df_df)
+    print(df_df.columns)
+    df_annotation = merge_tables(df_amr, df_vf, df_df)
     records = list(SeqIO.parse(gbk, 'genbank'))
     annotated = []
     for rec in records:
@@ -93,7 +115,7 @@ def main(amr, vf, df, gbk, output, nts_diff):
     print(f"Wrote annotated GenBank to {output}")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Merge abricate.tab with GenBank file annotations')
+    parser = argparse.ArgumentParser(description='Merge abricate.tab and defense_finder_genes.tsv with GenBank file annotations')
     parser.add_argument('-g', '--gbk', required=True, help='Path to input GenBank file')
     parser.add_argument('-a', '--amr', required=True, help='Path to abricate_amr.tab file')
     parser.add_argument('-v', '--vf', required=True, help='Path to abricate_vf.tab file')

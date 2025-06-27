@@ -24,16 +24,6 @@ process DEFENSEFINDER_RUN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    cat > test.py<<EOF
-    import os
-    file_lastver = os.path.join(os.environ["HOME"], ".defensefinder_model_lastversion")
-    print(file_lastver)
-    print(os.environ["HOME"])
-    EOF
-
-    python3 test.py
-    find . -name ".defensefinder_model_lastversion"
-
     defense-finder \\
         run \\
         $args \\
@@ -41,28 +31,14 @@ process DEFENSEFINDER_RUN {
         --models-dir $db \\
         $fasta
 
-    grep '^>' ${prefix}.prt | awk -F ' # ' '{gsub(/^>/, "", \$1); print \$1, \$2, \$3, \$4}' > gene_positions.tsv
-
-    awk '
-        BEGIN {
-            FS = OFS = "\\t"
-        }
-        FNR==NR {
-            print \$0
-            pos_start[\$1] = \$2
-            pos_end[\$1] = \$3
-            strand[\$1] = \$4
-            next
-        }
-        FNR==1 {
-            print \$0, "start_pos", "end_pos", "strand"
-            next
-        }
-        {
-            id = \$2
-            print \$0, (id in pos_start ? pos_start[id] : "NA"), (id in pos_end ? pos_end[id] : "NA"), (id in strand ? strand[id] : "NA")
-        }
-    ' gene_positions.tsv ${prefix}_defense_finder_genes.tsv > ${prefix}_defense_finder_genes_pos.tsv
+    tail -n +2 ${prefix}_defense_finder_genes.tsv | sort -k2,2 > ${prefix}_defense_finder_genes_sorted.tsv
+    grep '^>' ${prefix}.prt  | awk -F ' # ' '{gsub(/^>/, "", \$1); print \$1, \$2, \$3, \$4}' | sed 's/\\s/\\t/g' | sort -k1,1 > gene_positions_sorted.tsv
+    echo -e "replicon\\thit_id\\tgene_name\\thit_pos\\tmodel_fqn\\tsys_id\\tsys_loci\\tlocus_num\\tsys_wholeness\\tsys_score\\tsys_occ\\thit_gene_ref\\thit_status\\thit_seq_len\\thit_i_eval\\thit_score\\thit_profile_cov\\thit_seq_cov\\thit_begin_match\\thit_end_match\\tcounterpart\\tused_in\\ttype\\tsubtype\\tactivity\\tstart\\tend\\tframe" > ${prefix}_defense_finder_genes_pos.tsv
+    awk -F'\t' 'NR==FNR {pos[\$1]=\$0; next}
+                \$2 in pos {
+                    split(pos[\$2], a, "\\t");
+                    print \$0 "\\t" a[2] "\\t" a[3] "\\t" a[4]
+                }' gene_positions_sorted.tsv ${prefix}_defense_finder_genes_sorted.tsv >> ${prefix}_defense_finder_genes_pos.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -74,7 +50,7 @@ process DEFENSEFINDER_RUN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_defense_finder_genes.tsv
+    touch ${prefix}_defense_finder_genes_pos.tsv
     touch ${prefix}_defense_finder_hmmer.tsv
     touch ${prefix}_defense_finder_systems.tsv
 
