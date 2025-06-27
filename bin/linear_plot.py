@@ -100,6 +100,9 @@ def main():
             elif 'VF' in feature.qualifiers.get('tag', [''])[0]:
                 track.add_features(feature, fc="#CF0B0B", label_type="gene", ls="none")
                 legend_elements.add('VF')
+            elif 'DF' in feature.qualifiers.get('tag', [''])[0]:
+                track.add_features(feature, fc="#6B0DA1", label_type="gene", ls="none")
+                legend_elements.add('VF')
             elif 'hypothetical' in feature.qualifiers.get('product', [''])[0].lower():
                 track.add_features(feature, label_type="gene", fc='grey', ls="none")
                 legend_elements.add('hypothetical')
@@ -122,6 +125,7 @@ def main():
         'CDS': ("#0082C8", None, 'CDS'),
         'AMR': ("#F58230", None, 'AMR gene'),
         'VF': ("#CF0B0B", None, 'VF gene'),
+        'DF': ("#6B0DA1", None, 'DF gene'),
         'hypothetical': ("grey", None, 'Hypothetical gene'),
     }
 
@@ -130,7 +134,7 @@ def main():
         'intI', 'Pc', 'Pint', 'attI', 'attC',
         #TODO: When functional annotation is implemented, modify to match new markers
         'Integrase', 'Phage protein',
-        'AMR', 'VF', 'CDS', 'hypothetical'
+        'AMR', 'VF', 'DF', 'CDS', 'hypothetical'
     ]
     legend_handles = []
     for key in ordered_keys:

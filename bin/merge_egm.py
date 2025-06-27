@@ -95,7 +95,7 @@ def main():
                     )
 
             # pick and rename the needed columns
-            df2 = df[["Contig", "Start", "End", "Length", "Name", "AMR", "VF"]].copy()
+            df2 = df[["Contig", "Start", "End", "Length", "Name", "AMR", "VF", "DF"]].copy()
             df2["Sample"] = args.sample
             df2["MGE"] = mge
             for _, row in df2.iterrows():
@@ -118,7 +118,7 @@ def main():
                     logger.error(f"Could not create MGE feature from row: {row.to_dict()}\n{e}")
 
             # reorder
-            df2 = df2[["Sample", "Contig", "Start", "End", "Length", "MGE", "Name", "AMR", "VF"]]
+            df2 = df2[["Sample", "Contig", "Start", "End", "Length", "MGE", "Name", "AMR", "VF", "DF"]]
             merged.append(df2)
 
         # 3) concatenate and write out

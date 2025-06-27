@@ -19,9 +19,9 @@ def load_tab(tab_path):
 
 def reformat_tab(tab_path):
     df = pd.read_csv(tab_path, sep="\t", header=0)
-    df['%IDENTITY'] = None
+    df['%IDENTITY'] = pd.NA
     df['DATABASE'] = 'DefenseFinder'
-    df['RESISTANCE'] = None
+    df['RESISTANCE'] = pd.NA
     df['PRODUCT'] = df[['activity', 'type', 'subtype']].agg('_'.join, axis=1)
     df.rename(columns={
                'replicon': 'SEQUENCE',
