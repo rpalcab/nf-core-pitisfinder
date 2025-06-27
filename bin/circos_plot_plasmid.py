@@ -119,21 +119,24 @@ def main():
         features = seqid2features[sector.name]
 
         # Plot xticks & intervals on inner position
-        genome_size = sum(gbk.get_seqid2size().values())
-        if genome_size > 1000000:
-            interval = math.ceil((genome_size * .97 // 8) / 100000) * 100000
+        contig_size = sector.size
+        if contig_size > 1000000:
             div=1000000
             units="Mb"
         else:
-            interval = math.ceil((genome_size // 8) / 1000) * 1000
             div=1000
             units="Kb"
-        tracks["cds_track"].xticks_by_interval(
-            interval=interval,
-            outer=True,
-            label_formatter=lambda v: f"{v/ div:.1f} {units}",
+
+        num_ticks = 13
+        x = [int(i * contig_size / (num_ticks - 1)) for i in range(num_ticks)][:-1]
+        labels = [f"{pos / div:.1f} {units}" for pos in x]
+
+        marker_track.xticks(
+            x=x,
+            labels=labels,
+            outer=False,
             label_orientation="vertical",
-            line_kws=dict(ec="grey"),
+            line_kws=dict(ec="grey")
         )
 
         # Plot 'gene' qualifier label if exists
@@ -223,14 +226,14 @@ def main():
     handles = []
 
     legend_map = {
-        "Forward CDS": Patch(color="#E6194B", label="Forward CDS"),
-        "Reverse CDS": Patch(color="#0082C8", label="Reverse CDS"),
+        "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
+        "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
         "Integron": Patch(color="#FF7F0E", label="Integron"),
         "Prophage": Patch(color="#17BECF", label="Prophage"),
         "IS": Patch(color="#E27FE4", label="IS"),
         "AMR": Patch(color="#2CA02C", label="AMR"),
         "VF": Patch(color="#FFD700", label="VF"),
-        "DF": Patch(color="#030303", label="DF"),
+        "DF": Patch(color="#7F7F7F", label="DF"),
         "MPF": Patch(color="#9467BD", label="MPF"),
         "oriT": Patch(color="#FFBB78", label="oriT"),
         "MOB": Patch(color="#0F3B5A", label="MOB"),

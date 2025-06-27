@@ -61,13 +61,16 @@ def get_plot_params(genome_size):
 def main():
     args = get_args()
 
+    if args.mobsuite_report is not None:
+        print(args.mobsuite_report)
+
     gbk = Genbank(args.input)
     seqid2size = gbk.get_seqid2size()
     genome_size = sum(seqid2size.values())
     figsize, dpi = get_plot_params(genome_size)
     space = 0 if len(seqid2size) == 1 else 2
     circos = Circos(sectors=seqid2size, space=space)
-    circos.text(f"{gbk.name}", size=12, r=150)
+    circos.text(f"{gbk.name}", size=12, r=125)
 
     seqid2features = gbk.get_seqid2features(feature_type=None)
 
@@ -99,10 +102,10 @@ def main():
     ]
 
     mge_colors = {
-        "MPF": "#911EB4",
-        "oriT": "#F58230",
-        "MOB": "#46F0F0",
-        "Replicon": "#F032E6"
+        "MPF": "#9467BD",
+        "oriT": "#FFBB78",
+        "MOB": "#0F3B5A",
+        "Replicon": "#912A2A"
     }
 
     for sector in circos.sectors:
@@ -127,21 +130,24 @@ def main():
         features = seqid2features[sector.name]
 
         # Plot xticks & intervals on inner position
-        genome_size = sum(gbk.get_seqid2size().values())
-        if genome_size > 1000000:
-            interval = math.ceil((genome_size * .97 // 8) / 100000) * 100000
+        contig_size = sector.size
+        if contig_size > 1000000:
             div=1000000
             units="Mb"
         else:
-            interval = math.ceil((genome_size // 8) / 1000) * 1000
             div=1000
             units="Kb"
-        tracks["cds_track"].xticks_by_interval(
-            interval=interval,
-            outer=True,
-            label_formatter=lambda v: f"{v/ div:.1f} {units}",
+
+        num_ticks = 13
+        x = [int(i * contig_size / (num_ticks - 1)) for i in range(num_ticks)][:-1]
+        labels = [f"{pos / div:.1f} {units}" for pos in x]
+
+        tracks["rvd_track"].xticks(
+            x=x,
+            labels=labels,
+            outer=False,
             label_orientation="vertical",
-            line_kws=dict(ec="grey"),
+            line_kws=dict(ec="grey")
         )
 
         # Plot 'gene' qualifier label if exists
@@ -166,7 +172,7 @@ def main():
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc="#E6194B")
                 feature_presence["Reverse CDS"] = True
             elif feature.type == "tRNA":
-                tracks["rna_track"].genomic_features(feature, color="#FFE119", lw=0.1)
+                tracks["rna_track"].genomic_features(feature, color="#10470B", lw=0.1)
                 feature_presence["tRNA"] = True
 
             # MGEs
@@ -174,24 +180,24 @@ def main():
                 tracks["pl_track"].genomic_features(feature, color="#911EB4", lw=0.1)
                 feature_presence["Plasmid"] = True
             elif feature.type == "MGE" and 'integron' in feature.qualifiers.get('type', []):
-                tracks["int_track"].genomic_features(feature, color="#F58230", lw=0.1)
+                tracks["int_track"].genomic_features(feature, color="#FF7F0E", lw=0.1)
                 feature_presence["Integron"] = True
             elif feature.type == "MGE" and 'prophage' in feature.qualifiers.get('type', []):
-                tracks["ph_track"].genomic_features(feature, color="#46F0F0", lw=0.1)
+                tracks["ph_track"].genomic_features(feature, color="#17BECF", lw=0.1)
                 feature_presence["Prophage"] = True
             elif feature.type == "MGE" and 'IS' in feature.qualifiers.get('type', []):
-                tracks["is_track"].genomic_features(feature, color="#F032E6", lw=0.1)
+                tracks["is_track"].genomic_features(feature, color="#E27FE4", lw=0.1)
                 feature_presence["IS"] = True
 
             # AMR, VF, DF
             if feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#D2F53C", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#2CA02C", lw=0.1)
                 feature_presence["AMR"] = True
             if feature.type == "CDS" and 'VF' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#AA6E28", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#FFD700", lw=0.1)
                 feature_presence["VF"] = True
             if feature.type == "CDS" and 'DF' in feature.qualifiers.get('tag', []):
-                tracks["rvd_track"].genomic_features(feature, color="#808080", lw=0.1)
+                tracks["rvd_track"].genomic_features(feature, color="#7F7F7F", lw=0.1)
                 feature_presence["DF"] = True
 
             # MGE biomarkers (if wanted)
@@ -210,20 +216,20 @@ def main():
     handles = []
 
     legend_map = {
-        "Forward CDS": Patch(color="#E6194B", label="Forward CDS"),
-        "Reverse CDS": Patch(color="#0082C8", label="Reverse CDS"),
-        "tRNA": Patch(color="#FFE119", label="tRNA"),
+        "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
+        "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
+        "tRNA": Patch(color="#10470B", label="tRNA"),
         "Plasmid": Patch(color="#911EB4", label="Plasmid"),
-        "Integron": Patch(color="#F58230", label="Integron"),
-        "Prophage": Patch(color="#46F0F0", label="Prophage"),
-        "IS": Patch(color="#F032E6", label="IS"),
-        "AMR": Patch(color="#D2F53C", label="AMR"),
-        "VF": Patch(color="#AA6E28", label="VF"),
-        "DF": Patch(color="#808080", label="DF"),
-        "MPF": Patch(color="#911EB4", label="MPF"),
-        "oriT": Patch(color="#F58230", label="oriT"),
-        "MOB": Patch(color="#46F0F0", label="MOB"),
-        "Replicon": Patch(color="#F032E6", label="Replicon")
+        "Integron": Patch(color="#FF7F0E", label="Integron"),
+        "Prophage": Patch(color="#17BECF", label="Prophage"),
+        "IS": Patch(color="#E27FE4", label="IS"),
+        "AMR": Patch(color="#2CA02C", label="AMR"),
+        "VF": Patch(color="#FFD700", label="VF"),
+        "DF": Patch(color="#7F7F7F", label="DF"),
+        "MPF": Patch(color="#9467BD", label="MPF"),
+        "oriT": Patch(color="#FFBB78", label="oriT"),
+        "MOB": Patch(color="#0F3B5A", label="MOB"),
+        "Replicon": Patch(color="#912A2A", label="Replicon")
     }
 
     for key, entry in legend_map.items():
@@ -233,7 +239,7 @@ def main():
             else:
                 handles.append(entry)
 
-    circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=8)
+    circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
 
     fig.savefig(args.output, dpi=dpi)
 
