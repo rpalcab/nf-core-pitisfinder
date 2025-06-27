@@ -55,9 +55,6 @@ workflow PITISFINDER {
             params.df_db ? params.df_db : null
         )
 
-    RVD_ANNOTATION.out.amr_report
-    RVD_ANNOTATION.out.vf_report
-
     // MERGE GBK AND AMR ANNOTATIONS
     ch_samplesheet.map {  meta, fasta, gbk ->
         return [ meta, gbk ]
