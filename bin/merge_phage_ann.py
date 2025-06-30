@@ -73,15 +73,18 @@ def annotate_record(record, df, nts_diff):
     return record
 
 def main(biomark, integrases, gbk, output, nts_diff):
-    df_biom = load_tab(biomark)
-    df_int = pd.read_table(integrases, sep='\t', header=0)
-    df_annotation = reformat_table(df_biom, df_int)
-    records = list(SeqIO.parse(gbk, 'genbank'))
-    annotated = []
-    for rec in records:
-        annotated.append(annotate_record(rec, df_annotation, nts_diff))
-    SeqIO.write(annotated, output, 'genbank')
-    print(f"Wrote annotated GenBank to {output}")
+    try:
+        df_biom = load_tab(biomark)
+        df_int = pd.read_table(integrases, sep='\t', header=0)
+        df_annotation = reformat_table(df_biom, df_int)
+        records = list(SeqIO.parse(gbk, 'genbank'))
+        annotated = []
+        for rec in records:
+            annotated.append(annotate_record(rec, df_annotation, nts_diff))
+        SeqIO.write(annotated, output, 'genbank')
+        print(f"Wrote annotated GenBank to {output}")
+    except:
+        print(f"No prophages in {output}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge Integron_finder biomarkers with GenBank file annotations')

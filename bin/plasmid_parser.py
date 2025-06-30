@@ -73,7 +73,7 @@ def extract_plasmid_row(df: pd.DataFrame, value: str) -> pd.Series:
     filtered = df[df['primary_cluster_id'] == value]
     return filtered
 
-def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List, vf_genes: List) -> Dict[str, any]:
+def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List, vf_genes: List, df_genes:List) -> Dict[str, any]:
     return {
         'sample': mrow['sample_id'],
         'contig': ','.join(contigs),
@@ -94,7 +94,8 @@ def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, 
         'mash_neighbor_identification': mrow.get('mash_neighbor_identification'),
         'mash_neighbor_distance': mrow.get('mash_neighbor_distance'),
         'AMR': ','.join(amr_genes),
-        'VF': ','.join(vf_genes)
+        'VF': ','.join(vf_genes),
+        'DF': ','.join(df_genes)
     }
 
 def main():
@@ -105,8 +106,10 @@ def main():
     args.out_dir.mkdir(parents=True, exist_ok=True)
     report_out = args.out_dir / f"{args.plasmid_name}.tsv"
     gbk_out = args.out_dir / f"{args.plasmid_name}.gbk"
-    pl_id = args.plasmid_name.split('_')[0]
-
+    if args.plasmid_name.startswith('novel_'):
+        pl_id = '_'.join(args.plasmid_name.split('_')[:2])
+    else:
+        pl_id = args.plasmid_name.split('_')[0]
     # Load tables
     df_mobt = load_tsv(args.mobsuite_typer)
     parts = df_mobt['sample_id'].str.split(':', n=1, expand=True)
@@ -117,9 +120,7 @@ def main():
     # df_res = load_tsv(args.res_file)
 
     mobt_filt = extract_plasmid_row(df_mobt, pl_id)
-    print(df_mobr)
     mobr_filt = extract_plasmid_row(df_mobr, pl_id)
-    print(mobr_filt)
     contigs = mobr_filt['contig_id'].tolist()
 
     qrow = df_qry.iloc[0]
@@ -138,21 +139,22 @@ def main():
 
     # Retrieve AMR genes from GBK annotation
     amr_genes = []
+    vf_genes = []
+    df_genes = []
     for record in selected_records:
         for feature in record.features:
             if feature.type == "CDS" and 'AMR' in feature.qualifiers.get('tag', [""]):
                 gene_name = feature.qualifiers.get("gene", [""])[0]
                 amr_genes.append(gene_name)
-
-    vf_genes = []
-    for record in selected_records:
-        for feature in record.features:
-            if feature.type == "CDS" and 'VF' in feature.qualifiers.get('tag', [""]):
+            elif feature.type == "CDS" and 'VF' in feature.qualifiers.get('tag', [""]):
                 gene_name = feature.qualifiers.get("gene", [""])[0]
                 vf_genes.append(gene_name)
+            elif feature.type == "CDS" and 'DF' in feature.qualifiers.get('tag', [""]):
+                gene_name = feature.qualifiers.get("gene", [""])[0]
+                df_genes.append(gene_name)
 
     # Retrieve report info
-    info = build_info(mobt_filt.iloc[0], contigs, qrow, prow, amr_genes, vf_genes)
+    info = build_info(mobt_filt.iloc[0], contigs, qrow, prow, amr_genes, vf_genes, df_genes)
     df_report = pd.DataFrame([info])
 
     # Save report

@@ -63,11 +63,6 @@ def infer_mge_type(path: Path) -> str:
 def main():
     args = parse_args()
 
-    # 0) Check there are MGE tables to merge
-    if args.tables is None:
-        logger.warning("No tables provided; no output written.")
-        exit(0)
-
     # 1) load contigs for validation
     try:
         gbk_records = list(SeqIO.parse(str(args.genbank), "genbank"))
@@ -80,63 +75,62 @@ def main():
     merged: List[pd.DataFrame] = []
     mge_features_by_contig = {rec.id: [] for rec in gbk_records}
 
-    for tbl_path in map(Path, args.tables.split(",")):
-        mge = infer_mge_type(tbl_path)
-        logger.info(f"Processing {tbl_path.name} as MGE='{mge}'")
+    if args.tables is None:
+        logger.warning("No tables provided.")
+        mge_features = []
+    else:
+        for tbl_path in map(Path, args.tables.split(",")):
+            mge = infer_mge_type(tbl_path)
+            logger.info(f"Processing {tbl_path.name} as MGE='{mge}'")
 
-        # read with pandas
-        df = pd.read_table(tbl_path, dtype=str)
+            # read with pandas
+            df = pd.read_table(tbl_path, dtype=str)
 
+            # warn if contigs not in GenBank
+            if "Contig" in df.columns:
+                missing = set(df["Contig"]) - valid_contigs
+                if missing:
+                    logger.warning(
+                        f"{len(missing)} contigs in {tbl_path.name} not found in GenBank: {', '.join(list(missing))}"
+                    )
 
-        # normalize column names (uppercase first letter)
-        # df.columns = [c.capitalize() for c in df.columns]
+            # pick and rename the needed columns
+            df2 = df[["Contig", "Start", "End", "Length", "Name", "AMR", "VF", "DF"]].copy()
+            df2["Sample"] = args.sample
+            df2["MGE"] = mge
+            for _, row in df2.iterrows():
+                try:
+                    contig = row["Contig"]
+                    start = int(row["Start"])
+                    end = int(row["End"])
+                    name = row["Name"]
 
-        # warn if contigs not in GenBank
-        if "Contig" in df.columns:
-            missing = set(df["Contig"]) - valid_contigs
-            if missing:
-                logger.warning(
-                    f"{len(missing)} contigs in {tbl_path.name} not found in GenBank: {', '.join(list(missing))}"
-                )
+                    feature = SeqFeature(
+                        FeatureLocation(start - 1, end),  # GenBank is 0-based start
+                        type="MGE",
+                        qualifiers={
+                            "type": mge,
+                            "name": name
+                        }
+                    )
+                    mge_features_by_contig[contig].append(feature)
+                except Exception as e:
+                    logger.error(f"Could not create MGE feature from row: {row.to_dict()}\n{e}")
 
-        # pick and rename the needed columns
-        df2 = df[["Contig", "Start", "End", "Name", "AMR", "VF"]].copy()
-        df2["Sample"] = args.sample
-        df2["MGE"] = mge
+            # reorder
+            df2 = df2[["Sample", "Contig", "Start", "End", "Length", "MGE", "Name", "AMR", "VF", "DF"]]
+            merged.append(df2)
 
-        for _, row in df2.iterrows():
-            try:
-                contig = row["Contig"]
-                start = int(row["Start"])
-                end = int(row["End"])
-                name = row["Name"]
-
-                feature = SeqFeature(
-                    FeatureLocation(start - 1, end),  # GenBank is 0-based start
-                    type="MGE",
-                    qualifiers={
-                        "type": mge,
-                        "name": name
-                    }
-                )
-                mge_features_by_contig[contig].append(feature)
-            except Exception as e:
-                logger.error(f"Could not create MGE feature from row: {row.to_dict()}\n{e}")
-
-        # reorder
-        df2 = df2[["Sample", "Contig", "Start", "End", "MGE", "Name", "AMR", "VF"]]
-        merged.append(df2)
-
-    # 3) concatenate and write out
-    out_df = pd.concat(merged, ignore_index=True)
-    out_df.sort_values(
-                        by=["Contig", "Start"],
-                        ascending=[True, True],
-                        inplace=True
-                        )
-    out_file = args.out.with_suffix(".tsv")
-    out_df.to_csv(out_file, sep="\t", index=False)
-    logger.info(f"Written merged table to {out_file}")
+        # 3) concatenate and write out
+        out_df = pd.concat(merged, ignore_index=True)
+        out_df.sort_values(
+                            by=["Contig", "Start"],
+                            ascending=[True, True],
+                            inplace=True
+                            )
+        out_file = args.out.with_suffix(".tsv")
+        out_df.to_csv(out_file, sep="\t", index=False)
+        logger.info(f"Written merged table to {out_file}")
 
 
     # 4) write GenBank with added MGE features

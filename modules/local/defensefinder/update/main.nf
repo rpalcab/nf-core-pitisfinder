@@ -4,8 +4,8 @@ process DEFENSEFINDER_UPDATE {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/defense-finder:2.0.0--pyhdfd78af_0':
-        'biocontainers/defense-finder:2.0.0--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/defense-finder:2.0.1--pyhdfd78af_0':
+        'biocontainers/defense-finder:2.0.1--pyhdfd78af_0' }"
 
     output:
     path("defense_db") , emit: db

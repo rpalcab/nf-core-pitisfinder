@@ -11,7 +11,7 @@ process PLASMID_SUMMARY {
     script:
     def prefix = "${meta.id}"
     """
-    echo -e "Contig\tName\tStart\tEnd\tAMR\tVF" > plasmid_summary.tsv
-    tail -q -n+2 $reports | cut -f2,6,3,4,19,20 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, 1, \$4, \$5, \$6}' >> plasmid_summary.tsv
+    echo -e "Contig\tName\tStart\tEnd\tLength\tAMR\tVF\tDF" > plasmid_summary.tsv
+    tail -q -n+2 $reports | cut -f2,6,3,4,19-21 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, "-", "-", \$4, \$5, \$6, \$7}' >> plasmid_summary.tsv
     """
 }

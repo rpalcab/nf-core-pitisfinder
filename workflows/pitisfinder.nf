@@ -8,9 +8,9 @@ include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pi
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pitisfinder_pipeline'
 
-// include { SAMPLESUMMARY          } from '../modules/local/samplesummary/main'
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
+include { VISUALIZE_PLASMID      } from '../modules/local/visualize/plasmid/main'
 
 include { RVD_ANNOTATION         } from '../subworkflows/local/rvd_annotation'
 include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
@@ -55,15 +55,13 @@ workflow PITISFINDER {
             params.df_db ? params.df_db : null
         )
 
-    RVD_ANNOTATION.out.amr_report
-    RVD_ANNOTATION.out.vf_report
-
     // MERGE GBK AND AMR ANNOTATIONS
     ch_samplesheet.map {  meta, fasta, gbk ->
         return [ meta, gbk ]
         }
         .join ( RVD_ANNOTATION.out.amr_report )
         .join ( RVD_ANNOTATION.out.vf_report )
+        .join ( RVD_ANNOTATION.out.df_report )
         .set { ch_mergeann }
     MERGE_ANNOTATIONS ( ch_mergeann )
 
@@ -82,6 +80,8 @@ workflow PITISFINDER {
     //
     // PLASMIDS
     //
+    ch_plasmid_contig_report = Channel.empty()
+
     if ( !params.skip_plasmids ) {
         PLASMID_ANALYSIS(
                     ch_fasta,
@@ -96,6 +96,13 @@ workflow PITISFINDER {
                         .map { meta, summary_list, gbk_list, summary, genomic_gbk ->
                             summary ? [ meta, summary_list + [ summary ], gbk_list + [ genomic_gbk ] ] : [ meta, summary_list, gbk_list ]
                     }
+
+        ch_plasmid_contig_report = PLASMID_ANALYSIS.out.contig_report
+    } else {
+        // Create empty channel with same structure when plasmids are skipped
+        ch_plasmid_contig_report = ch_samplesheet.map { meta, fasta, gbk ->
+            return [ meta, "" ]
+        }
     }
 
     //
@@ -126,7 +133,7 @@ workflow PITISFINDER {
         ch_summary = ch_summary
                         .join( ISESCAN.out.summary, remainder: true )
                         .map { meta, summary_list, gbk_list, summary ->
-                            summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, file_list, summary_list, gbk_list ]
+                            summary ? [ meta, summary_list + [ summary ], gbk_list ] : [ meta, summary_list, gbk_list ]
                     }
     }
 
@@ -161,12 +168,26 @@ workflow PITISFINDER {
     // SAMPLE SUMMARY
     //
     ch_summary.join( ch_gbk )
+              .join( ch_plasmid_contig_report )
               .set { ch_samplesummary }
 
     SAMPLE_SUMMARY(ch_samplesummary)
 
-    // SAMPLESUMMARY(ch_samplesummary)
+    //
+    // PLASMID VISUALIZATION
+    //
+    if ( !params.skip_plasmids ) {
+        PLASMID_ANALYSIS.out.plasmid_gbk
+            .groupTuple(by: 0)
+            .join( SAMPLE_SUMMARY.out.tsv )
+            .transpose()
+            .map { meta, plasmid_name, gbk_file, summary_tsv ->
+                return [meta, plasmid_name, gbk_file, summary_tsv]
+            }
+            .set { ch_visual }
 
+        VISUALIZE_PLASMID( ch_visual )
+    }
 
     //
     // Collate and save software versions

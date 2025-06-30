@@ -33,10 +33,10 @@ def basic_info(subdf: pd.DataFrame) -> Tuple[Dict[str, Any], pd.DataFrame]:
         'size': end - start
     }, subdf
 
-def merge_info(summary_df: pd.DataFrame, sample: str, contig: int, integron_name: str, d_info: Dict, cassettes: List, max_cassettes: int, amr_list: List, vf_list: List) -> pd.DataFrame:
+def merge_info(summary_df: pd.DataFrame, sample: str, contig: int, integron_name: str, d_info: Dict, cassettes: List, max_cassettes: int, amr_list: List, vf_list: List, df_list: List) -> pd.DataFrame:
     cassettes = (cassettes[:max_cassettes] + [None] * (max_cassettes - len(cassettes)))
     row = [sample, contig, integron_name, d_info['type'], d_info['size'], d_info['start'],
-           d_info['end'], d_info['integrase_model']] + cassettes  + [','.join(amr_list)] + [','.join(vf_list)]
+           d_info['end'], d_info['integrase_model']] + cassettes  + [','.join(amr_list)] + [','.join(vf_list)] + [','.join(df_list)]
     summary_df.loc[len(summary_df)] = row
     return row, summary_df
 
@@ -49,6 +49,7 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
         cds_names_list = []
         amr_list = []
         vf_list = []
+        df_list = []
 
         new_start = start
         new_end = end
@@ -70,10 +71,13 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
             if feature.type == "CDS" and "AMR" in feature.qualifiers.get("tag", [""]):
                 amr_list.append(feature.qualifiers.get("gene", [""])[0])
 
-            if feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
+            elif feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
                 vf_list.append(feature.qualifiers.get("gene", [""])[0])
 
-            if feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
+            elif feature.type == "CDS" and "DF" in feature.qualifiers.get("tag", [""]):
+                df_list.append(feature.qualifiers.get("gene", [""])[0])
+
+            elif feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
                 cds_names_list.append(feature.qualifiers.get("gene", ["protein"])[0])
 
         cassettes = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in cds_names_list])
@@ -95,7 +99,7 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
         with open(out_dir / f"{outname}.fasta", "w") as fasta_out:
             SeqIO.write(new_record, fasta_out, "fasta")
 
-        return cds_names_list, outname, amr_list, vf_list
+        return cds_names_list, outname, amr_list, vf_list, df_list
 
     raise ValueError(f"Contig ID '{contig_id}' not found in {input_gbk}")
 
@@ -118,7 +122,7 @@ if __name__ == "__main__":
         logging.info(f"{sample}: no complete integrons found.")
         exit()
 
-    columns = ['Sample', 'Contig', 'Name', 'Type', 'Size', 'Start', 'End', 'Integrase'] + [f'Cassette {i+1}' for i in range(args.max_cas)] + ['AMR', 'VF']
+    columns = ['Sample', 'Contig', 'Name', 'Type', 'Length', 'Start', 'End', 'Integrase'] + [f'Cassette {i+1}' for i in range(args.max_cas)] + ['AMR', 'VF', 'DF']
     summary_df = pd.DataFrame(columns=columns)
 
     df_grouped = df_integrons.groupby(['ID_replicon', 'ID_integron'])
@@ -126,14 +130,14 @@ if __name__ == "__main__":
     for count, ((contig, integron), subdf) in enumerate(df_grouped):
         d_info, subdf = basic_info(subdf)
         if d_info['type'] == 'complete':
-            cassettes, integron_name, amr_list, vf_list = extract_region(args.ann_file, contig, d_info['start'], d_info['end'], sample, count, args.out_dir)
-            row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, amr_list, vf_list)
+            cassettes, integron_name, amr_list, vf_list, df_list = extract_region(args.ann_file, contig, d_info['start'], d_info['end'], sample, count, args.out_dir)
+            row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, amr_list, vf_list, df_list)
             int_df = pd.DataFrame([row], columns=columns)
             int_df.to_csv(f'{args.out_dir / integron_name}.tsv', index=False, sep='\t')
         else:
             cassettes = []
             integron_name = f'in0_{sample}_{count}'
-            row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, [], [])
+            row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, [], [], [])
 
     summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")

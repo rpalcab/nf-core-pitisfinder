@@ -23,6 +23,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
     contig_id = row['Contig']
     amr_list = []
     vf_list = []
+    df_list = []
     new_features = []
 
     for record in SeqIO.parse(input_gbk, "genbank"):
@@ -46,9 +47,10 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
 
             if feature.type == "CDS" and "AMR" in feature.qualifiers.get("tag", [""]):
                 amr_list.append(feature.qualifiers.get("gene", [""])[0])
-
-            if feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
+            elif feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
                 vf_list.append(feature.qualifiers.get("gene", [""])[0])
+            elif feature.type == "CDS" and "DF" in feature.qualifiers.get("tag", [""]):
+                df_list.append(feature.qualifiers.get("gene", [""])[0])
 
             new_features.append(SeqFeature(location=new_location, type=feature.type, qualifiers=new_qualifiers))
 
@@ -71,6 +73,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
         row = row.copy()
         row['AMR'] = ';'.join(amr_list)
         row['VF'] = ';'.join(vf_list)
+        row['DF'] = ';'.join(df_list)
         return row, outname
 
     raise ValueError(f"Contig ID '{contig_id}' not found in {input_gbk}")
@@ -79,8 +82,7 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
 def reformat_tables(df_provirus, df_taxonomy):
     df_info = df_provirus.merge(df_taxonomy, on="seq_name")
     df_info.columns = [c.capitalize() for c in df_info.columns]
-    df_info.rename(columns={'Source_seq': 'Contig',
-                    'Length': 'Size'
+    df_info.rename(columns={'Source_seq': 'Contig'
                     }, inplace=True)
 
     df_info['Sample'] = sample
@@ -90,7 +92,7 @@ def reformat_tables(df_provirus, df_taxonomy):
             .str.split(';')
             .apply(lambda x: next((i for i in reversed(x) if i.strip()), ''))
         )
-    return df_info[['Sample', 'Contig', 'Name', 'Size', 'Start', 'End', 'LastLineage']]
+    return df_info[['Sample', 'Contig', 'Name', 'Length', 'Start', 'End', 'LastLineage']]
 
 if __name__ == "__main__":
     args = get_args()
@@ -109,7 +111,7 @@ if __name__ == "__main__":
 
     df_info = reformat_tables(df_provirus, df_taxonomy)
 
-    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Size', 'Start', 'End', 'AMR', 'VF']
+    columns = ['Sample', 'Contig', 'Name', 'LastLineage', 'Length', 'Start', 'End', 'AMR', 'VF', 'DF']
     summary_records = []
 
     for _, row in df_info.iterrows():

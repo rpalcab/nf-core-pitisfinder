@@ -1,4 +1,4 @@
-process VISUALIZE_CIRCULAR {
+process VISUALIZE_PLASMID {
     tag "$meta.id"
     label 'process_low'
 
@@ -8,7 +8,7 @@ process VISUALIZE_CIRCULAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(name), path(gbk), val(mobsuite_report)
+    tuple val(meta), val(name), path(gbk), path(tsv)
 
     output:
     tuple val(meta), val(name), path("*.png"), emit: png
@@ -18,9 +18,8 @@ process VISUALIZE_CIRCULAR {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def args = mobsuite_report ? "-r ${mobsuite_report}" : ""
     """
-    circos_plot.py -i $gbk $args -o ${name}.png
+    circos_plot_plasmid.py -i $gbk -m $tsv -o ${name}.png
     """
 
     stub:
