@@ -102,7 +102,7 @@ def main():
                 legend_elements.add('VF')
             elif 'DF' in feature.qualifiers.get('tag', [''])[0]:
                 track.add_features(feature, fc="#6B0DA1", label_type="gene", ls="none")
-                legend_elements.add('VF')
+                legend_elements.add('DF')
             elif 'hypothetical' in feature.qualifiers.get('product', [''])[0].lower():
                 track.add_features(feature, label_type="gene", fc='grey', ls="none")
                 legend_elements.add('hypothetical')
