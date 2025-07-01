@@ -73,7 +73,16 @@ def extract_plasmid_row(df: pd.DataFrame, value: str) -> pd.Series:
     filtered = df[df['primary_cluster_id'] == value]
     return filtered
 
+def predict_copla_mobility(mpf, mob, orit):
+    if mpf != "-" and mob != "-":
+        return "conjugative"
+    if mpf == "-" and (mob != "-" or orit != "-"):
+        return "mobilizable"
+    else:
+        return "non-mobilizable"
+
 def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, amr_genes: List, vf_genes: List, df_genes:List) -> Dict[str, any]:
+    copla_mobility = predict_copla_mobility(qrow.get('MPF'), qrow.get('MOB'), mrow.get('orit_type(s)'))
     return {
         'sample': mrow['sample_id'],
         'contig': ','.join(contigs),
@@ -88,7 +97,8 @@ def build_info(mrow: pd.Series, contigs:List, qrow: pd.Series, prow: pd.Series, 
         'mpf_mobsuite': mrow.get('mpf_type'),
         'mpf_copla': qrow.get('MPF'),
         'orit_mobsuite': mrow.get('orit_type(s)'),
-        'predicted_mobility': mrow.get('predicted_mobility'),
+        'predicted_mobility_mobsuite': mrow.get('predicted_mobility'),
+        'predicted_mobility_copla': copla_mobility,
         'primary_cluster_id': mrow.get('primary_cluster_id'),
         'secondary_cluster_id': mrow.get('secondary_cluster_id'),
         'mash_neighbor_identification': mrow.get('mash_neighbor_identification'),
