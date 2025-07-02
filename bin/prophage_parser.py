@@ -86,7 +86,7 @@ def reformat_tables(df_provirus, df_taxonomy):
                     }, inplace=True)
 
     df_info['Sample'] = sample
-    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + "_" + df_info.index.astype(str)
+    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + "_" + df_info.index.astype(str) + f"_{sample}"
     df_info['LastLineage'] = (
             df_info['Lineage']
             .str.split(';')
