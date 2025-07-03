@@ -2,6 +2,7 @@ include { MOBSUITE_RECON        } from '../../../modules/nf-core/mobsuite/recon/
 include { PLASMIDMARKERS        } from '../../../modules/local/plasmidmarkers/main'
 include { COPLA_COPLADBDOWNLOAD } from '../../../modules/local/copla/copladbdownload/main'
 include { COPLA_COPLA           } from '../../../modules/local/copla/copla/main'
+include { GETCOORDS             } from '../../../modules/local/copla/getcoords/main'
 include { PLASMID_PARSER        } from '../../../modules/local/plasmidparser/main'
 include { RENAME_PLASMIDS       } from '../../../modules/local/renameplasmids/main'
 include { PLASMID_SUMMARY       } from '../../../modules/local/plasmidsummary/main'
@@ -21,14 +22,6 @@ workflow PLASMID_ANALYSIS {
     // MOBSUITE
     MOBSUITE_RECON ( ch_fasta )
     ch_versions = ch_versions.mix( MOBSUITE_RECON.out.versions )
-
-    // UPDATE GENOMIC GBK
-    MOBSUITE_RECON.out.biomarkers
-                .join(ch_gbk)
-                .set { ch_updategbk }
-
-    // ANNOTATE PLASMID MARKERS
-    PLASMIDMARKERS(ch_updategbk)
 
     // RENAME PLASMIDS
     ch_rename = RENAME_PLASMIDS ( MOBSUITE_RECON.out.plasmids )
@@ -52,6 +45,36 @@ workflow PLASMID_ANALYSIS {
     }
     COPLA_COPLA ( ch_plasmids, ch_copladb )
     ch_versions = ch_versions.mix( COPLA_COPLA.out.versions )
+
+    // GET COPLA COORDINATES
+    ch_getcoords = COPLA_COPLA.out.faa
+            .join(COPLA_COPLA.out.mob, by: [0, 1])
+            .join(COPLA_COPLA.out.rep, by: [0, 1])
+            .join(COPLA_COPLA.out.conj, by: [0, 1], remainder: true)
+            .map { tuple ->
+                def meta = tuple[0]
+                def plasmid_name = tuple[1]
+                def faa = tuple[2]
+                def mob = tuple[3]
+                def rep = tuple[4]
+                def conj = tuple.size() == 6 ? tuple[5] : ""
+                return [meta, plasmid_name, faa, conj, mob, rep]
+        }
+
+    GETCOORDS(ch_getcoords)
+
+    // ANNOTATE PLASMID MARKERS
+    // Group biomarkers by sample ID
+    GETCOORDS.out.biomarkers
+        .groupTuple(by: 0)
+        .set {ch_grouped_biomarkers}
+
+    MOBSUITE_RECON.out.biomarkers
+                .join(ch_grouped_biomarkers)
+                .join(ch_gbk)
+                .set { ch_updategbk }
+
+    PLASMIDMARKERS(ch_updategbk)
 
     // PLASMID_PARSER
     COPLA_COPLA.out.query
