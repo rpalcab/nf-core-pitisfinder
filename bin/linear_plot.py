@@ -124,8 +124,8 @@ def main():
         'Phage protein': (d_tag['Phage protein'], None, 'Phage protein'),
         'CDS': ("#0082C8", None, 'CDS'),
         'AMR': ("#F58230", None, 'AMR gene'),
-        'VF': ("#CF0B0B", None, 'VF gene'),
-        'DF': ("#6B0DA1", None, 'DF gene'),
+        'VF': ("#CF0B0B", None, 'Virulence Factor'),
+        'DF': ("#6B0DA1", None, 'Defense Factor'),
         'hypothetical': ("grey", None, 'Hypothetical gene'),
     }
 

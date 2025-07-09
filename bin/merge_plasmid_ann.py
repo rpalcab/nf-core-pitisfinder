@@ -59,6 +59,10 @@ def load_reformat_copla(copla):
     return adapted_df
 
 def drop_overlapping_mobsuite(df_annotation, nts_diff=15):
+    """
+    Drops ovelapping hits (+- 15 nts difference).
+    Prioritizes COPLA results over MOBsuite.
+    """
     keep_rows = []
     mob_mask = df_annotation['source'] == 'MOBsuite'
     copla_mask = df_annotation['source'] == 'COPLA'
@@ -77,11 +81,14 @@ def drop_overlapping_mobsuite(df_annotation, nts_diff=15):
         if not overlap:
             keep_rows.append(i)
 
-    # Keep all COPLA + non-overlapping MOBsuite
-    return pd.concat([
+    # Keep all COPLA + non-overlapping MOBsuite. Drop overlapping COPLA hits
+    df_concat = pd.concat([
         df_annotation[copla_mask],
         df_annotation.loc[keep_rows]
     ], ignore_index=True)
+    df_concat.drop_duplicates(subset=['sseqid', 'sstart', 'send'], inplace=True)
+
+    return df_concat
 
 def annotate_record(record, df, nts_diff):
     # select only tab hits for this contig (by SEQUENCE)

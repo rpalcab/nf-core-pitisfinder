@@ -160,13 +160,11 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
                                    label_orientation="vertical", line_kws=dict(ec="grey"))
 
         for feature in features:
-            start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) // 2
-            gene_name = feature.qualifiers.get("gene", [None])[0]
-
             # Annotate if AMR/VF/DF
+            gene_name = feature.qualifiers.get("gene", [None])[0]
             if gene_name and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
-                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws={"weight": "bold"})
+                label_pos = (int(feature.location.start) + int(feature.location.end)) // 2
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
 
         for feature in features:
             # CDS & RNA
@@ -175,9 +173,9 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc=color)
                 key = "Forward CDS" if feature.location.strand == 1 else "Reverse CDS"
                 feature_presence[key] = True
-            elif feature.type == "tRNA":
-                tracks["rna_track"].genomic_features(feature, color="#10470B", lw=0.1)
-                feature_presence["tRNA"] = True
+            # elif feature.type == "tRNA":
+            #     tracks["rna_track"].genomic_features(feature, color="#10470B", lw=0.1)
+            #     feature_presence["tRNA"] = True
 
             # MGE annotations
             if feature.type == "MGE":
@@ -213,14 +211,36 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
 
     fig = circos.plotfig(figsize=figsize)
     # Build legend
+    handles = []
     legend_map = {
         "Forward CDS": "#0082C8", "Reverse CDS": "#E6194B", "tRNA": "#10470B",
         "Plasmid": "#911EB4", "Integron": "#FF7F0E", "Prophage": "#17BECF", "IS": "#E27FE4",
-        "AMR": "#2CA02C", "VF": "#FFD700", "DF": "#7F7F7F",
+        "AMR": "#2CA02C", "Virulence Factor": "#FFD700", "Defense Factor": "#7F7F7F",
         "MPF": "#9467BD", "oriT": "#FFBB78", "MOB": "#0F3B5A", "Replicon": "#912A2A"
     }
-    handles = [Patch(color=color, label=key) for key, color in legend_map.items() if feature_presence[key]]
+
+    legend_map = {
+        "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
+        "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
+        "Plasmid": Patch(color="#911EB4", label="Plasmid"),
+        "Integron": Patch(color="#FF7F0E", label="Integron"),
+        "Prophage": Patch(color="#17BECF", label="Prophage"),
+        "IS": Patch(color="#E27FE4", label="IS"),
+        "AMR": Patch(color="#2CA02C", label="AMR"),
+        "VF": Patch(color="#FFD700", label="Virulence Factor"),
+        "DF": Patch(color="#7F7F7F", label="Defense Factor"),
+        "MPF": Patch(color="#9467BD", label="MPF"),
+        "oriT": Patch(color="#FFBB78", label="oriT"),
+        "MOB": Patch(color="#0F3B5A", label="MOB"),
+        "Replicon": Patch(color="#912A2A", label="Replicon")
+    }
+
+    for key, entry in legend_map.items():
+        if feature_presence[key]:
+            handles.append(entry)
+
     circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
+
     fig.savefig(output_path, dpi=dpi)
 
 # %%

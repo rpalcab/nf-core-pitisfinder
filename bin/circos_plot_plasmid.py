@@ -142,11 +142,10 @@ def main():
         # Plot 'gene' qualifier label if exists
         labels, label_pos_list = [], []
         for feature in features:
-            start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) // 2
             gene_name = feature.qualifiers.get("gene", [None])[0]
             if gene_name is not None and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
-                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws = {"weight":"bold"})
+                label_pos = (int(feature.location.start) + int(feature.location.end)) // 2
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
                 labels.append(gene_name)
                 label_pos_list.append(label_pos)
 
@@ -224,7 +223,6 @@ def main():
     fig = circos.plotfig(figsize=figsize)
     # Add legend
     handles = []
-
     legend_map = {
         "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
         "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
@@ -232,8 +230,8 @@ def main():
         "Prophage": Patch(color="#17BECF", label="Prophage"),
         "IS": Patch(color="#E27FE4", label="IS"),
         "AMR": Patch(color="#2CA02C", label="AMR"),
-        "VF": Patch(color="#FFD700", label="VF"),
-        "DF": Patch(color="#7F7F7F", label="DF"),
+        "VF": Patch(color="#FFD700", label="Virulence Factor"),
+        "DF": Patch(color="#7F7F7F", label="Defense Factor"),
         "MPF": Patch(color="#9467BD", label="MPF"),
         "oriT": Patch(color="#FFBB78", label="oriT"),
         "MOB": Patch(color="#0F3B5A", label="MOB"),
@@ -242,10 +240,7 @@ def main():
 
     for key, entry in legend_map.items():
         if feature_presence[key]:
-            if isinstance(entry, list):
-                handles.extend(entry)
-            else:
-                handles.append(entry)
+            handles.append(entry)
 
     circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
 
