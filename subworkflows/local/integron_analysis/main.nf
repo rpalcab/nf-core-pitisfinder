@@ -55,6 +55,7 @@ workflow INTEGRON_ANALYSIS {
     emit:
     summary        = INTEGRON_PARSER.out.summary      // channel: [ val(meta), [ integron_summary.tsv ] ]
     gbk            = INTEGRON_PARSER.out.gbk          // channel: [ val(meta), [ int_*.gbk ] ]
+    png            = VISUALIZE_LINEAR.out.png         // channel: [ val(meta), [ int_name ] , [ int_*.gbk ] ]
     genomic_gbk    = INTEGRONMARKERS.out.gbk          // channel: [ val(meta), [ gbk ] ]
     versions       = ch_versions                      // channel: [ versions.yml ]
 }
