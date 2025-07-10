@@ -78,7 +78,7 @@ workflow PROPHAGE_ANALYSIS {
         }.set { ch_pplin }
 
     // VISUALIZATION (LINEAR)
-    ch_outvisualize = Channel.value('prophages/summary/')
+    ch_outvisualize = Channel.value('prophages/')
     VISUALIZE_LINEAR ( ch_pplin, ch_outvisualize )
 
     emit:

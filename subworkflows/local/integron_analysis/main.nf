@@ -49,7 +49,7 @@ workflow INTEGRON_ANALYSIS {
     }.set { ch_vislin }
 
     // VISUALIZATION (LINEAR)
-    ch_outvisualize = Channel.value('integrons/summary/')
+    ch_outvisualize = Channel.value('integrons/')
     VISUALIZE_LINEAR ( ch_vislin, ch_outvisualize )
 
     emit:
