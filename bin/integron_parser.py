@@ -70,19 +70,17 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
 
             if feature.type == "CDS" and "AMR" in feature.qualifiers.get("tag", [""]):
                 amr_list.append(feature.qualifiers.get("gene", [""])[0])
-
             elif feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
                 vf_list.append(feature.qualifiers.get("gene", [""])[0])
-
             elif feature.type == "CDS" and "DF" in feature.qualifiers.get("tag", [""]):
                 df_list.append(feature.qualifiers.get("gene", [""])[0])
 
-            elif feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
+            if feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
                 cds_names_list.append(feature.qualifiers.get("gene", ["protein"])[0])
 
-        cassettes = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in cds_names_list])
+        amr_name = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in amr_list])
 
-        outname = f"int_{cassettes}_{sample}_{count}"
+        outname = f"int_{amr_name}_{sample}_{count}"
         new_record = SeqRecord(
             seq=record.seq[new_start:new_end],
             id=outname,
