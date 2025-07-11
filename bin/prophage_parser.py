@@ -71,9 +71,9 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
             SeqIO.write(new_record, fasta_out, "fasta")
 
         row = row.copy()
-        row['AMR'] = ';'.join(amr_list)
-        row['VF'] = ';'.join(vf_list)
-        row['DF'] = ';'.join(df_list)
+        row['AMR'] = ','.join(amr_list)
+        row['VF'] = ','.join(vf_list)
+        row['DF'] = ','.join(df_list)
         return row, outname
 
     raise ValueError(f"Contig ID '{contig_id}' not found in {input_gbk}")
@@ -86,7 +86,7 @@ def reformat_tables(df_provirus, df_taxonomy):
                     }, inplace=True)
 
     df_info['Sample'] = sample
-    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + "_" + df_info.index.astype(str) + f"_{sample}"
+    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + f"_{sample}_" + df_info.index.astype(str)
     df_info['LastLineage'] = (
             df_info['Lineage']
             .str.split(';')
