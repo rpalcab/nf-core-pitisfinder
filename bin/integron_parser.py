@@ -76,7 +76,7 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
                 df_list.append(feature.qualifiers.get("gene", [""])[0])
 
             if feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
-                cds_names_list.append(feature.qualifiers.get("gene", ["protein"])[0])
+                cds_names_list.append(feature.qualifiers.get("gene", ["hypothetical protein"])[0])
 
         amr_name = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in amr_list])
 
