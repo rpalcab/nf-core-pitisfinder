@@ -100,7 +100,6 @@ if __name__ == "__main__":
     sample = '_'.join(args.ann_file.stem.split('_')[:-2])
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "prophage_summary.tsv"
 
     try:
         df_provirus = pd.read_table(args.provirus, header=0)
@@ -124,5 +123,7 @@ if __name__ == "__main__":
             logging.warning(f"{row['Sample']}:{row['Contig']} - Extraction failed: {e}")
 
     summary_df = pd.DataFrame(summary_records, columns=columns)
+    sample = summary_df['Sample'].iloc[0]
+    report_out = args.out_dir / f"prophage_summary_{sample}.tsv"
     summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")

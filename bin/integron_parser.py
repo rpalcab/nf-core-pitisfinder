@@ -107,7 +107,6 @@ if __name__ == "__main__":
     sample = args.integron_file.stem
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "integron_summary.tsv"
 
     try:
         df_integrons = pd.read_table(args.integron_file, comment='#')
@@ -137,5 +136,7 @@ if __name__ == "__main__":
             integron_name = f'in0_{sample}_{count}'
             row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, [], [], [])
 
+    sample = summary_df['Sample'].iloc[0]
+    report_out = args.out_dir / f"integron_summary_{sample}.tsv"
     summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")

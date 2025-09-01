@@ -11,6 +11,7 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_piti
 include { MERGE_ANNOTATIONS      } from '../modules/local/mergeannotations/main'
 include { ISESCAN                } from '../modules/local/isescan/main'
 include { VISUALIZE_PLASMID      } from '../modules/local/visualize/plasmid/main'
+include { MGESUMMARY            } from '../modules/local/mgesummary/main'
 
 include { RVD_ANNOTATION         } from '../subworkflows/local/rvd_annotation'
 include { PLASMID_ANALYSIS       } from '../subworkflows/local/plasmid_analysis'
@@ -189,6 +190,73 @@ workflow PITISFINDER {
         VISUALIZE_PLASMID( ch_visual )
     }
 
+    //
+    // FINAL MGE SUMMARY
+    //
+    // Gral
+    ch_mgesum_gral_tsv = SAMPLE_SUMMARY.out.tsv
+                            .map { meta, tsv ->
+                                return [ tsv ]
+                            }
+                            .collect()
+
+    // Plasmids
+    ch_mgesum_plasmids_tsv = params.skip_plasmids ? Channel.empty() : PLASMID_ANALYSIS.out.summary
+                                                .map { meta, tsv ->
+                                                    return [ tsv ]
+                                                }
+                                                .collect()
+
+    ch_mgesum_plasmids_png = params.skip_plasmids ? Channel.empty() : VISUALIZE_PLASMID.out.png
+                                                .map { meta, pl_id, png ->
+                                                    return [ png ]
+                                                }
+                                                .collect()
+
+    // Integrons
+    ch_mgesum_integrons_tsv = params.skip_integrons ? Channel.empty() : INTEGRON_ANALYSIS.out.summary
+                                                .map { meta, tsv ->
+                                                    return [ tsv ]
+                                                }
+                                                .collect()
+
+    ch_mgesum_integrons_png = params.skip_integrons ? Channel.empty() : INTEGRON_ANALYSIS.out.png
+                                                .map { meta, int_id, png ->
+                                                    return [ png ]
+                                                }
+                                                .collect()
+
+
+    // Prophages
+    ch_mgesum_prophages_tsv = params.skip_prophages ? Channel.empty() : PROPHAGE_ANALYSIS.out.summary
+                                                .map { meta, tsv ->
+                                                    return [ tsv ]
+                                                }
+                                                .collect()
+
+    ch_mgesum_prophages_png = params.skip_prophages ? Channel.empty() : PROPHAGE_ANALYSIS.out.png
+                                                .map { meta, prophage_id, png ->
+                                                    return [ png ]
+                                                }
+                                                .collect()
+
+    ch_mgesum_gral_tsv.view()
+    ch_mgesum_plasmids_tsv.view()
+    ch_mgesum_plasmids_png.view()
+    ch_mgesum_integrons_tsv.view()
+    ch_mgesum_integrons_png.view()
+    ch_mgesum_prophages_tsv.view()
+    ch_mgesum_prophages_png.view()
+
+    MGESUMMARY(
+            ch_mgesum_gral_tsv.ifEmpty([]),
+            ch_mgesum_plasmids_tsv.ifEmpty([]),
+            ch_mgesum_plasmids_png.ifEmpty([]),
+            ch_mgesum_integrons_tsv.ifEmpty([]),
+            ch_mgesum_integrons_png.ifEmpty([]),
+            ch_mgesum_prophages_tsv.ifEmpty([]),
+            ch_mgesum_prophages_png.ifEmpty([])
+            )
     //
     // Collate and save software versions
     //
