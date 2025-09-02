@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
         description="Merge MGE summary TSVs into one table"
     )
     p.add_argument("-s", "--sample", required=True,
-                   help="Sample name (goes in the Sample column)")
+                   help="Sample name")
     p.add_argument("-g", "--genbank", required=True, type=Path,
                    help="Assembly GenBank file (.gbk)")
     p.add_argument("-t", "--tables",
@@ -49,11 +49,11 @@ def load_contigs(gbk_path: Path) -> Set[str]:
     return contigs
 
 
-def infer_mge_type(path: Path) -> str:
+def infer_mge_type(path: Path, sample: str) -> str:
     """Infer MGE type from filename, e.g. 'prophage' from 'prophage_summary.tsv'."""
     name = path.stem  # e.g. "prophage_summary"
-    if name.endswith("_summary"):
-        return name[: -len("_summary")]
+    if name.endswith(f"_summary_{sample}"):
+        return name[: -len(f"_summary_{sample}")]
     return name
 
 
@@ -80,7 +80,7 @@ def main():
         mge_features = []
     else:
         for tbl_path in map(Path, args.tables.split(",")):
-            mge = infer_mge_type(tbl_path)
+            mge = infer_mge_type(tbl_path, args.sample)
             logger.info(f"Processing {tbl_path.name} as MGE='{mge}'")
 
             # read with pandas

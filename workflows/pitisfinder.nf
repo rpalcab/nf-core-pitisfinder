@@ -199,17 +199,22 @@ workflow PITISFINDER {
                                 return [ tsv ]
                             }
                             .collect()
+    ch_mgesum_gral_png = SAMPLE_SUMMARY.out.png
+                            .map { meta, name, png ->
+                                return [ png ]
+                            }
+                            .collect()
 
     // Plasmids
-    ch_mgesum_plasmids_tsv = params.skip_plasmids ? Channel.empty() : PLASMID_ANALYSIS.out.summary
-                                                .map { meta, tsv ->
-                                                    return [ tsv ]
-                                                }
-                                                .collect()
-
     ch_mgesum_plasmids_png = params.skip_plasmids ? Channel.empty() : VISUALIZE_PLASMID.out.png
                                                 .map { meta, pl_id, png ->
                                                     return [ png ]
+                                                }
+                                                .collect()
+
+    ch_mgesum_plasmids_reports = params.skip_plasmids ? Channel.empty() : PLASMID_ANALYSIS.out.plasmid_report
+                                                .map { meta, name, tsv ->
+                                                    return [ tsv ]
                                                 }
                                                 .collect()
 
@@ -240,18 +245,20 @@ workflow PITISFINDER {
                                                 }
                                                 .collect()
 
-    ch_mgesum_gral_tsv.view()
-    ch_mgesum_plasmids_tsv.view()
-    ch_mgesum_plasmids_png.view()
-    ch_mgesum_integrons_tsv.view()
-    ch_mgesum_integrons_png.view()
-    ch_mgesum_prophages_tsv.view()
-    ch_mgesum_prophages_png.view()
+    // ch_mgesum_gral_tsv.view()
+    // ch_mgesum_gral_png.view()
+    // ch_mgesum_plasmids_tsv.view()
+    // ch_mgesum_plasmids_png.view()
+    // ch_mgesum_integrons_tsv.view()
+    // ch_mgesum_integrons_png.view()
+    // ch_mgesum_prophages_tsv.view()
+    // ch_mgesum_prophages_png.view()
 
     MGESUMMARY(
             ch_mgesum_gral_tsv.ifEmpty([]),
-            ch_mgesum_plasmids_tsv.ifEmpty([]),
+            ch_mgesum_gral_png.ifEmpty([]),
             ch_mgesum_plasmids_png.ifEmpty([]),
+            ch_mgesum_plasmids_reports.ifEmpty([]),
             ch_mgesum_integrons_tsv.ifEmpty([]),
             ch_mgesum_integrons_png.ifEmpty([]),
             ch_mgesum_prophages_tsv.ifEmpty([]),
