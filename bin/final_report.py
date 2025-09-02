@@ -653,7 +653,7 @@ def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, generat
 # %%
 def load_concat(reports):
     if len(reports) == 0:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=['Sample', 'Contig', 'Name'])
     l_dfs = [pd.read_csv(report, sep='\t', header=0) for report in reports]
     df = pd.concat(l_dfs)
     df.fillna('', inplace=True)
@@ -857,43 +857,43 @@ def main():
     parser.add_argument(
         "-p", "--plasmid_tsv",
         required=False,
-        default=[''],
+        default="",
         help="Path to the plasmid summary TSV files of the samples."
     )
     parser.add_argument(
         "-P", "--plasmid_png",
         required=False,
-        default=[''],
+        default="",
         help="Path to the plasmid PNG files of the samples."
     )
     parser.add_argument(
         "--plasmid_reports",
         required=False,
-        default=[''],
+        default="",
         help="Path to individual plasmid reports TSV files of the samples."
     )
     parser.add_argument(
         "-i", "--integron_tsv",
         required=False,
-        default=[''],
+        default="",
         help="Path to the integron summary TSV files of the samples."
     )
     parser.add_argument(
         "-I", "--integron_png",
         required=False,
-        default=[''],
+        default="",
         help="Path to the integron PNG files of the samples."
     )
     parser.add_argument(
         "-f", "--phage_tsv",
         required=False,
-        default=[''],
+        default="",
         help="Path to the phage summary TSV files of the samples."
     )
     parser.add_argument(
         "-F", "--phage_png",
         required=False,
-        default=[''],
+        default="",
         help="Path to the phage PNG files of the samples."
     )
     args = parser.parse_args()
@@ -906,14 +906,14 @@ def main():
 
     # Contig plots (chr/plasmids or contig_N)
     contig_plots = [Path(f) for f in args.gral_png.split(',')]
-    plasmid_plots = [Path(f) for f in args.plasmid_png.split(',')]
+    plasmid_plots = [Path(f) for f in args.plasmid_png.split(',') if f != ""]
     list_plots = contig_plots + plasmid_plots
 
     # General dataframe (removing IS)
     df_general = df_complete[df_complete['MGE'] != 'IS']
 
     # ## Plasmids
-    plasmid_files = [f for f in args.plasmid_reports.split(',')]
+    plasmid_files = [f for f in args.plasmid_reports.split(',') if f != ""]
     df_pl = load_concat(plasmid_files)
     df_pl.rename(columns={
         'sample': 'Sample',
@@ -934,11 +934,11 @@ def main():
     )
 
     ## Integrons
-    integron_files = [Path(f) for f in args.integron_tsv.split(',')]
+    integron_files = [Path(f) for f in args.integron_tsv.split(',') if f != ""]
     df_int = load_concat(integron_files)
 
     ## Prophages
-    phage_files = [Path(f) for f in args.phage_tsv.split(',')]
+    phage_files = [Path(f) for f in args.phage_tsv.split(',') if f != ""]
     df_ph = load_concat(phage_files)
 
     ## IS
@@ -970,8 +970,8 @@ def main():
     # %%
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    integron_plots = [Path(f) for f in args.integron_png.split(',')]
-    phage_plots = [Path(f) for f in args.phage_png.split(',')]
+    integron_plots = [Path(f) for f in args.integron_png.split(',') if f != ""]
+    phage_plots = [Path(f) for f in args.phage_png.split(',') if f != ""]
     mge_plots = plasmid_plots + integron_plots + phage_plots
     df_filtered = add_png_path(df_filtered, mge_plots, output_file)
 
