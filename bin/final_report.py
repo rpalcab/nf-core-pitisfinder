@@ -11,6 +11,7 @@ import numpy as np
 import math
 import shutil
 from pathlib import Path
+import re
 
 # %%
 template_str = """
@@ -112,6 +113,7 @@ template_str = """
             align-items: center;
             background-color: #ffffff;
             border-bottom: 1px solid #dee2e6;
+            border-radius: 8px;
             padding: 1.2rem 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -145,13 +147,15 @@ template_str = """
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
+            background: #001321;
+            background: radial-gradient(circle,rgb(222, 241, 255) 0%, rgb(255, 255, 255) 100%);
             color: #212529;
             margin: 2rem;
             line-height: 1.6;
         }
         details.section {
             border: 1px solid #ddd;
+            background-color: #ffffff;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 2rem;
@@ -393,6 +397,15 @@ template_str = """
             background-color: #ffffff !important;
         }
 
+        #lightbox-img {
+            cursor: grab;
+            transition: transform 0.2s ease;
+        }
+
+        #lightbox-img:active {
+            cursor: grabbing;
+        }
+
     </style>
 </head>
 <body>
@@ -408,7 +421,7 @@ template_str = """
   </div>
 </header>
 
-<details id="floating-summary" open >
+<details id="floating-summary" >
   <summary><strong>☰ Sections</strong></summary>
   <ul>
     <li><a href="#section-general">1. General Report</a></li>
@@ -451,7 +464,54 @@ template_str = """
         <span class="chevron"></span>
         <h2>6. Sample overview</h2>
     </summary>
-    <div id="sample-filter-container-sample" class="sample-filter-container" style="margin-top: 10px;"></div>
+    <div style="overflow-x: auto;">
+        <table id="table_sample_overview" class="display nowrap">
+            <thead>
+                <tr>
+                    <th>Sample</th>
+                    <th>Contig</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Length</th>
+                    <th>MGE</th>
+                    <th>Name</th>
+                    <th>AMR</th>
+                    <th>VF</th>
+                    <th>DF</th>
+                    <th>Preview</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="lightbox" style="
+        position: fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background: rgba(0,0,0,0.8);
+        display:none;
+        justify-content:center;
+        align-items:center;
+        z-index:1000;">
+
+        <!-- Close button -->
+        <span id="lightbox-close" style="
+            position:absolute;
+            top:15px;
+            right:25px;
+            font-size:32px;
+            font-weight:bold;
+            color:#fff;
+            cursor:pointer;
+            user-select:none;">&times;</span>
+
+        <!-- The image -->
+        <img id="lightbox-img" src="" alt="Enlarged view"
+            style="max-width:90%; max-height:90%; border:3px solid #fff; border-radius:8px;">
+    </div>
+    <div class="mb-3" id="sample-overview-img-container"
+        style="display:grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap:15px; max-width:100%;">
+    </div>
 </details>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -460,6 +520,8 @@ template_str = """
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
 
 <script>
+    const sampleImages = {{ d_sample_imgs | tojson }};
+
     function initTableFilters(tableId, colTypes) {
         // Build an array of indexes for all numeric columns
         const numericCols = colTypes
@@ -556,12 +618,137 @@ template_str = """
         });
     }
 
+
+    function initSampleOverview() {
+        const generalTable = $('#table_general').DataTable();
+
+        // Init overview table with aligned toolbar layout
+        const overviewTable = $('#table_sample_overview').DataTable({
+            orderCellsTop: true,
+            fixedHeader: true,
+            pageLength: 10,
+            autoWidth: false,
+            scrollX: true,
+            dom:
+                "<'row align-items-center mb-2'<'col-sm-12 d-flex align-items-center dt-left-toolbar'<'filter-sample me-3'>Bf>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-5'l><'col-sm-2'i><'col-sm-5'p>>",
+            buttons: [
+                {
+                    extend: 'colvis',
+                    text: 'Shown columns',
+                    className: 'custom-dt-button'
+                }
+            ],
+        initComplete: function () {
+            const api = this.api();
+
+            // Build unique sample list from general table
+            const uniqueSamples = generalTable.column(0).data().unique().sort();
+
+            // Dropdown
+            const select = $('<select class="custom-select-sample"></select>');
+            uniqueSamples.each(d => { if (d) select.append(`<option value="${d}">${d}</option>`); });
+
+            // Label + wrapper
+            const $label = $('<label class="me-2 mb-0">Select sample:</label>');
+            const $wrapper = $('<div class="sample-filter-wrapper d-flex align-items-center me-3"></div>');
+            $wrapper.append($label).append(select);
+
+            // Inject into DataTables left toolbar
+            $(api.table().container()).find('.dt-left-toolbar').prepend($wrapper);
+
+            // Lightbox controller
+            const Lightbox = (() => {
+                const lb    = document.getElementById('lightbox');
+                const lbImg = document.getElementById('lightbox-img');
+                const xBtn  = document.getElementById('lightbox-close');
+
+                let scale = 1, posX = 0, posY = 0;
+                let isDragging = false, startX = 0, startY = 0;
+
+                function apply() { lbImg.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+                function reset() { scale = 1; posX = 0; posY = 0; lbImg.style.transform = 'none'; }
+                function open(src) { reset(); lbImg.src = src; lb.style.display = 'flex'; }
+                function close() { lb.style.display = 'none'; reset(); }
+
+                // Zoom with wheel
+                lbImg.addEventListener('wheel', e => {
+                    e.preventDefault();
+                    const step = 0.1;
+                    scale = e.deltaY < 0 ? scale + step : Math.max(1, scale - step);
+                    apply();
+                }, { passive: false });
+
+                // Drag with left button only
+                lbImg.addEventListener('mousedown', e => {
+                    if (e.button !== 0) return;
+                    isDragging = true; startX = e.clientX - posX; startY = e.clientY - posY;
+                });
+                document.addEventListener('mousemove', e => { if (!isDragging) return; posX = e.clientX - startX; posY = e.clientY - startY; apply(); });
+                document.addEventListener('mouseup', () => { isDragging = false; });
+
+                lbImg.addEventListener('dragstart', e => e.preventDefault());
+                // Reset zoom/position on double-click
+                lbImg.addEventListener('dblclick', reset);
+                // Close with ESC
+                document.addEventListener('keydown', e => { if (e.key === 'Escape' && lb.style.display !== 'none') close(); });
+                // Close with X
+                xBtn.addEventListener('click', close);
+
+                return { open, close };
+            })();
+
+            // Update function
+            function updateOverview(sample) {
+                const rows = generalTable.rows().data().toArray().filter(r => r[0] === sample);
+                api.clear();
+                api.rows.add(rows).draw();
+
+                // Update image grid
+                const imgContainer = document.getElementById('sample-overview-img-container');
+                imgContainer.innerHTML = ''; // clear previous
+
+                // Flex layout for centering
+                imgContainer.style.display = 'flex';
+                imgContainer.style.flexWrap = 'wrap';
+                imgContainer.style.justifyContent = 'center';
+                imgContainer.style.gap = '20px'; // spacing between images
+
+                const imgPaths = sampleImages[sample] || [];
+                imgPaths.forEach(path => {
+                    const img = document.createElement('img');
+                    img.src = path;
+                    img.alt = sample + ' overview';
+                    img.style.width = '500px';
+                    img.style.height = '550px';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '1px solid #ccc';
+                    img.style.borderRadius = '5px';
+                    img.style.cursor = 'zoom-in';
+                    img.onclick = () => Lightbox.open(path);
+                    imgContainer.appendChild(img);
+                });
+            }
+
+            // Default = first sample
+            const defaultSample = uniqueSamples[0];
+            select.val(defaultSample);
+            updateOverview(defaultSample);
+
+            // On change
+            select.on('change', () => { updateOverview(select.val()); });
+            }
+        });
+    }
+
     $(document).ready(function () {
         initTableFilters('table_general', {{ column_types_general | tojson }});
         {% if df_pl is not none %}initTableFilters('table_pl', {{ column_types_pl | tojson }});{% endif %}
         {% if df_int is not none %}initTableFilters('table_int', {{ column_types_int | tojson }});{% endif %}
         {% if df_ph is not none %}initTableFilters('table_ph', {{ column_types_ph | tojson }});{% endif %}
         {% if df_is is not none %}initTableFilters('table_is', {{ column_types_is | tojson }});{% endif %}
+        initSampleOverview();
     });
 </script>
 
@@ -609,7 +796,7 @@ def prepare_table_data(df):
     return col_types, zipped, filters
 
 # %%
-def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, generation_date, output_file):
+def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, d_sample_imgs, generation_date, output_file):
     # Copy to mge dataframes
     basic_df = df_general[['Sample', 'Contig', 'Name', 'MGE', 'Preview']]
     df_pl = df_pl.merge(basic_df[basic_df['MGE'] == 'plasmid'][['Sample', 'Contig', 'Preview']], on=['Sample', 'Contig'], how='left')
@@ -629,6 +816,7 @@ def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, generat
         df_ph=df_ph if not df_ph.empty else None,
         df_is=df_is if not df_is.empty else None,
         d_figs=d_figs,
+        d_sample_imgs=d_sample_imgs,
         column_types_general=column_types_general,
         zipped_columns_general=zipped_columns_general,
         filter_options_general=filter_options_general,
@@ -829,6 +1017,26 @@ def add_png_path(df, png_paths, output_file):
     df = infer_copy_png(df, png_paths, outpath)
     return df
 
+def group_copy_plots(list_plots, outpath):
+    d_sample_imgs = {}
+    for plot_path in list_plots:
+        shutil.copy2(plot_path, outpath / plot_path.name)
+        name = plot_path.stem
+        if name.startswith(r'chromosome_'):
+            key = re.sub(r'chromosome_', '', name)
+        elif name.startswith(r'contig_'):
+            key = re.sub(r'contig_[0-9]+_', '', name)
+        elif name.startswith(r'novel_'):
+                key = re.sub(r'novel_[A-Za-z0-9]+_', '', name)
+        else:
+            key = re.sub(r'^[A-Za-z0-9]+_', '', name)
+
+        if key in d_sample_imgs:
+            d_sample_imgs[key].append(str(outpath / plot_path.name))
+        else:
+            d_sample_imgs[key] = [str(outpath / plot_path.name)]
+    return d_sample_imgs
+
 # %%
 def main():
     parser = argparse.ArgumentParser(
@@ -909,6 +1117,11 @@ def main():
     plasmid_plots = [Path(f) for f in args.plasmid_png.split(',') if f != ""]
     list_plots = contig_plots + plasmid_plots
 
+    # Retrieve samples with plots and copy to images folder
+    outpath = list_plots[0].parent / "images"
+    outpath.mkdir(parents=True, exist_ok=True)
+    d_sample_imgs = group_copy_plots(list_plots, outpath)
+
     # General dataframe (removing IS)
     df_general = df_complete[df_complete['MGE'] != 'IS']
 
@@ -982,6 +1195,7 @@ def main():
         df_ph=df_ph,
         df_is=df_is,
         d_figs=d_figs,
+        d_sample_imgs=d_sample_imgs,
         generation_date=now,
     #     input_dir=input_dir,
         output_file=output_file

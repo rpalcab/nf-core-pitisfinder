@@ -28,7 +28,7 @@ process MGESUMMARY {
     def args = task.ext.args ?: ''
     def gral_tsv_str = gral_tsv.join(',')
     def gral_tsv_opt = gral_tsv_str ? "-g ${gral_tsv_str}" : ""
-    def gral_png_str = gral_tsv.join(',')
+    def gral_png_str = gral_png.join(',')
     def gral_png_opt = gral_png_str ? "-G ${gral_png_str}" : ""
     def plasmids_png_str = plasmids_png.join(',')
     def plasmids_png_opt = plasmids_png_str ? "-P ${plasmids_png_str}" : ""

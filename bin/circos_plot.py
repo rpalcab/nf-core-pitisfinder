@@ -85,11 +85,11 @@ def handle_fragmented_assembly(gbk_parser, output_prefix, sample):
         ax.text(0.5, 0.5, "Assembly too fragmented. Not plotted.",
                 fontsize=16, ha='center', va='center')
         ax.axis('off')
-        fig.savefig(f"{output_prefix}_too_fragmented.png", dpi=300)
+        fig.savefig(f"too_fragmented_{output_prefix}.png", dpi=300)
         return
 
     for contig in filtered_contigs:
-        contig_output = f"{output_prefix}.contig_{contig}.png"
+        contig_output = f"{contig}_{output_prefix}.png"
         plot_single_contig(gbk_parser, contig, contig_output, sample)
 
 def plot_single_contig(gbk_parser, contig_id, output_path, sample):
@@ -249,7 +249,7 @@ def main():
         if not subset_features:
             print("Warning: No valid chromosome contigs found in GBK matching the report.")
 
-        output_file = args.output.with_name(f"{args.output.stem}_chromosome.png")
+        output_file = args.output.with_name(f"chromosome_{args.output.stem}.png")
         plot_circos(
             seqid2size=subset_sizes,
             seqid2features=subset_features,
@@ -269,11 +269,11 @@ def main():
             ax.text(0.5, 0.5, "Assembly too fragmented. Not plotted.",
                     fontsize=16, ha='center', va='center')
             ax.axis('off')
-            fig.savefig(args.output.with_name(f"{args.output.stem}.png"), dpi=300)
+            fig.savefig(args.output.with_name(f"too_fragmented_{args.output.stem}.png"), dpi=300)
             return
 
         for contig in filtered:
-            output_file = args.output.with_name(f"{args.output.stem}_{contig}.png")
+            output_file = args.output.with_name(f"{contig}_{args.output.stem}.png")
             plot_circos(
                 seqid2size={contig: all_sizes[contig]},
                 seqid2features={contig: all_features[contig]},

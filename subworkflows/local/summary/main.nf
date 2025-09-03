@@ -23,6 +23,7 @@ workflow SAMPLE_SUMMARY {
                 return [ meta, summary_gbk, gbk_list ]
             }
             .set { ch_mergegbk }
+
     MERGEGBKS( ch_mergegbk )
 
     // Create circos plot

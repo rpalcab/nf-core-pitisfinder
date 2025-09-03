@@ -203,7 +203,7 @@ workflow PITISFINDER {
                             .map { meta, name, png ->
                                 return [ png ]
                             }
-                            .collect()
+                            .flatten().collect()
 
     // Plasmids
     ch_mgesum_plasmids_png = params.skip_plasmids ? Channel.empty() : VISUALIZE_PLASMID.out.png
@@ -244,15 +244,6 @@ workflow PITISFINDER {
                                                     return [ png ]
                                                 }
                                                 .collect()
-
-    // ch_mgesum_gral_tsv.view()
-    // ch_mgesum_gral_png.view()
-    // ch_mgesum_plasmids_tsv.view()
-    // ch_mgesum_plasmids_png.view()
-    // ch_mgesum_integrons_tsv.view()
-    // ch_mgesum_integrons_png.view()
-    // ch_mgesum_prophages_tsv.view()
-    // ch_mgesum_prophages_png.view()
 
     MGESUMMARY(
             ch_mgesum_gral_tsv.ifEmpty([]),
