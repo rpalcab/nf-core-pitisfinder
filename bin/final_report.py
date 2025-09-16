@@ -433,7 +433,7 @@ template_str = """
   </ul>
 </details>
 
-{{ render_section("1. General Report", 'general', render_table(df_general, zipped_columns_general, filter_options_general, 'table_general'), 'table_general', [d_figs.get('general')]) }}
+{{ render_section("1. General Report", 'general', render_table(df_filtered, zipped_columns_filtered, filter_options_filtered, 'table_filtered'), 'table_filtered', [d_figs.get('general')]) }}
 
 {% if df_pl is not none %}
     {{ render_section("2. Plasmids", 'plasmids', render_table(df_pl, zipped_columns_pl, filter_options_pl, 'table_pl'), 'table_pl', d_figs.get('plasmid', [])) }}
@@ -464,21 +464,24 @@ template_str = """
         <span class="chevron"></span>
         <h2>6. Sample overview</h2>
     </summary>
+    {{ render_table(df_general, zipped_columns_general, filter_options_general, 'table_general') }}
+    <style>
+        #table_general_wrapper {
+            display: none !important;
+        }
+    </style>
     <div style="overflow-x: auto;">
         <table id="table_sample_overview" class="display nowrap">
             <thead>
                 <tr>
-                    <th>Sample</th>
-                    <th>Contig</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Length</th>
-                    <th>MGE</th>
-                    <th>Name</th>
-                    <th>AMR</th>
-                    <th>VF</th>
-                    <th>DF</th>
-                    <th>Preview</th>
+                    {% for col, _ in zipped_columns_general %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+                <tr class="filter-row">
+                    {% for col, col_type in zipped_columns_general %}
+                        {{ render_filter_cell(col, col_type, filter_options_general) }}
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody></tbody>
@@ -620,6 +623,7 @@ template_str = """
 
 
     function initSampleOverview() {
+
         const generalTable = $('#table_general').DataTable();
 
         // Init overview table with aligned toolbar layout
@@ -643,7 +647,42 @@ template_str = """
         initComplete: function () {
             const api = this.api();
 
-            // Build unique sample list from general table
+            // Per-column filters
+            api.columns().every(function (i) {
+                const header = $(this.header());
+                const input  = header.closest('thead')
+                                    .find('tr.filter-row th')
+                                    .eq(i)
+                                    .find('input, select');
+                if (!input.length) return;
+
+                input.on('input change', () => {
+                    const v = input.val() || '';
+                    if (['Start','End','Length'].includes(header.text())) {
+                        overviewTable.draw(); // triggers ext.search
+                    } else {
+                        api.column(i).search(v, false, false).draw();
+                    }
+                });
+            });
+
+            // Numeric range filter
+            const numericCols = [2,3,4]; // índices de Start, End, Length
+            $.fn.dataTable.ext.search.push((settings, data) => {
+                if (settings.nTable.id !== 'table_sample_overview') return true;
+                for (const i of numericCols) {
+                    const th = $('#table_sample_overview thead tr.filter-row th').eq(i);
+                    const rawMin = th.find('input.min').val();
+                    const rawMax = th.find('input.max').val();
+                    const min = rawMin === '' ? -Infinity : parseFloat(rawMin);
+                    const max = rawMax === '' ? Infinity : parseFloat(rawMax);
+                    const cell = parseFloat(data[i]);
+                    if ((rawMin !== '' && cell < min) || (rawMax !== '' && cell > max)) return false;
+                }
+                return true;
+            });
+
+            // Build unique sample list from filtered table
             const uniqueSamples = generalTable.column(0).data().unique().sort();
 
             // Dropdown
@@ -743,7 +782,7 @@ template_str = """
     }
 
     $(document).ready(function () {
-        initTableFilters('table_general', {{ column_types_general | tojson }});
+        initTableFilters('table_filtered', {{ column_types_filtered | tojson }});
         {% if df_pl is not none %}initTableFilters('table_pl', {{ column_types_pl | tojson }});{% endif %}
         {% if df_int is not none %}initTableFilters('table_int', {{ column_types_int | tojson }});{% endif %}
         {% if df_ph is not none %}initTableFilters('table_ph', {{ column_types_ph | tojson }});{% endif %}
@@ -796,14 +835,15 @@ def prepare_table_data(df):
     return col_types, zipped, filters
 
 # %%
-def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, d_sample_imgs, generation_date, output_file):
+def render_final_report(df_general, df_filtered, df_pl, df_int, df_ph, df_is, d_figs, d_sample_imgs, generation_date, output_file):
     # Copy to mge dataframes
-    basic_df = df_general[['Sample', 'Contig', 'Name', 'MGE', 'Preview']]
+    basic_df = df_filtered[['Sample', 'Contig', 'Name', 'MGE', 'Preview']]
     df_pl = df_pl.merge(basic_df[basic_df['MGE'] == 'plasmid'][['Sample', 'Contig', 'Preview']], on=['Sample', 'Contig'], how='left')
     df_int = df_int.merge(basic_df[basic_df['MGE'] == 'integron'][['Sample', 'Contig', 'Name', 'Preview']], on=['Sample', 'Contig', 'Name'], how='left').replace(np.nan, '')
     df_ph = df_ph.merge(basic_df[basic_df['MGE'] == 'prophage'][['Sample', 'Contig', 'Name', 'Preview']], on=['Sample', 'Contig', 'Name'], how='left')
 
     column_types_general, zipped_columns_general, filter_options_general = prepare_table_data(df_general)
+    column_types_filtered, zipped_columns_filtered, filter_options_filtered = prepare_table_data(df_filtered)
     column_types_pl, zipped_columns_pl, filter_options_pl = prepare_table_data(df_pl)
     column_types_int, zipped_columns_int, filter_options_int = prepare_table_data(df_int)
     column_types_ph, zipped_columns_ph, filter_options_ph = prepare_table_data(df_ph)
@@ -811,6 +851,7 @@ def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, d_sampl
 
     rendered = Template(template_str).render(
         df_general=df_general,
+        df_filtered=df_filtered,
         df_pl=df_pl if not df_pl.empty else None,
         df_int=df_int if not df_int.empty else None,
         df_ph=df_ph if not df_ph.empty else None,
@@ -820,6 +861,9 @@ def render_final_report(df_general, df_pl, df_int, df_ph, df_is, d_figs, d_sampl
         column_types_general=column_types_general,
         zipped_columns_general=zipped_columns_general,
         filter_options_general=filter_options_general,
+        column_types_filtered=column_types_filtered,
+        zipped_columns_filtered=zipped_columns_filtered,
+        filter_options_filtered=filter_options_filtered,
         column_types_pl=column_types_pl,
         zipped_columns_pl=zipped_columns_pl,
         filter_options_pl=filter_options_pl,
@@ -1110,7 +1154,7 @@ def main():
 
     ## Sample reports
     report_files = [f for f in args.gral_tsv.split(',')]
-    df_complete = load_concat(report_files)
+    df_general = load_concat(report_files)
 
     # Contig plots (chr/plasmids or contig_N)
     contig_plots = [Path(f) for f in args.gral_png.split(',')]
@@ -1121,9 +1165,6 @@ def main():
     outpath = list_plots[0].parent / "images"
     outpath.mkdir(parents=True, exist_ok=True)
     d_sample_imgs = group_copy_plots(list_plots, outpath)
-
-    # General dataframe (removing IS)
-    df_general = df_complete[df_complete['MGE'] != 'IS']
 
     # ## Plasmids
     plasmid_files = [f for f in args.plasmid_reports.split(',') if f != ""]
@@ -1155,7 +1196,7 @@ def main():
     df_ph = load_concat(phage_files)
 
     ## IS
-    df_is = df_complete[df_complete['MGE'] == 'IS']
+    df_is = df_general[df_general['MGE'] == 'IS']
     df_is.drop(columns=["MGE", 'AMR', "VF", "DF"], inplace=True)
     df_is['Start'] = df_is['Start'].astype(int)
     df_is['End'] = df_is['End'].astype(int)
@@ -1163,12 +1204,12 @@ def main():
     # %%
     d_figs = {}
 
-    d_figs['general'] = plot_general(df_general)
-
     df_filtered = df_general[
         (df_general['MGE'] != 'IS') &
         (~df_general['Name'].str.startswith('in0_', na=False))
     ].copy()
+
+    d_figs['general'] = plot_general(df_filtered)
 
     for mge in df_filtered['MGE'].unique():
         df_sub = df_filtered[df_filtered['MGE'] == mge].copy()
@@ -1187,9 +1228,16 @@ def main():
     phage_plots = [Path(f) for f in args.phage_png.split(',') if f != ""]
     mge_plots = plasmid_plots + integron_plots + phage_plots
     df_filtered = add_png_path(df_filtered, mge_plots, output_file)
+    df_general = pd.merge(
+        df_general,
+        df_filtered[['Sample', 'Contig', 'Name', 'MGE', 'Preview']],
+        on=['Sample', 'Contig', 'Name', 'MGE'],
+        how='left'
+    ).replace(np.nan, '')
 
     render_final_report(
-        df_general=df_filtered,
+        df_general=df_general,
+        df_filtered=df_filtered,
         df_pl=df_pl,
         df_int=df_int,
         df_ph=df_ph,
