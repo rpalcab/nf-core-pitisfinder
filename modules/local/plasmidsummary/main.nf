@@ -6,12 +6,12 @@ process PLASMID_SUMMARY {
     tuple val(meta), path(reports), path(gbks_plasmids), path(gbk_genome)
 
     output:
-    tuple val(meta), path("plasmid_summary.tsv"), emit: summary
+    tuple val(meta), path("plasmid_summary_*.tsv"), emit: summary
 
     script:
     def prefix = "${meta.id}"
     """
-    echo -e "Contig\tName\tStart\tEnd\tLength\tAMR\tVF\tDF" > plasmid_summary.tsv
-    tail -q -n+2 $reports | cut -f2,6,3,4,19-21 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, "-", "-", \$4, \$5, \$6, \$7}' >> plasmid_summary.tsv
+    echo -e "Contig\tName\tStart\tEnd\tLength\tAMR\tVF\tDF" > plasmid_summary_${prefix}.tsv
+    tail -q -n+2 $reports | cut -f2-5,15-17 | awk -F'\t' 'BEGIN{OFS="\t"} {print \$1, \$2":"\$3, "", "", \$4, \$5, \$6, \$7}' >> plasmid_summary_${prefix}.tsv
     """
 }

@@ -10,7 +10,7 @@ process INTEGRON_PARSER {
     tuple val(meta), path(gbk), path(integrons)
 
     output:
-    tuple val(meta), path("integron_summary.tsv"), emit: summary, optional: true
+    tuple val(meta), path("integron_summary*.tsv"), emit: summary, optional: true
     tuple val(meta), path("int_*.fasta"), emit: fasta, optional: true
     tuple val(meta), path("int_*.tsv"), emit: tsv, optional: true
     tuple val(meta), path("int_*.gbk"), emit: gbk, optional: true
@@ -26,6 +26,6 @@ process INTEGRON_PARSER {
 
     stub:
     """
-    touch integrons_summary.tsv
+    touch integron_summary.tsv
     """
 }

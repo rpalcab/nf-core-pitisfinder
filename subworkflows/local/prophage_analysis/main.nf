@@ -78,13 +78,14 @@ workflow PROPHAGE_ANALYSIS {
         }.set { ch_pplin }
 
     // VISUALIZATION (LINEAR)
-    ch_outvisualize = Channel.value('prophages/summary/')
+    ch_outvisualize = Channel.value('prophages/')
     VISUALIZE_LINEAR ( ch_pplin, ch_outvisualize )
 
     emit:
     genomic_gbk    = PROPHAGEMARKERS.out.gbk          // channel: [ val(meta), [ gbk ] ]
     summary        = PROPHAGEPARSER.out.summary      // channel: [ val(meta), [ prophage_summary.tsv ] ]
     gbk            = PROPHAGEPARSER.out.gbk          // channel: [ val(meta), [ prophage_*.gbk ] ]
+    png            = VISUALIZE_LINEAR.out.png         // channel: [ val(meta), [ ph_name ] , [ ph_*.gbk ] ]
     versions       = ch_versions                      // channel: [ versions.yml ]
 }
 

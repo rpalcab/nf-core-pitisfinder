@@ -19,7 +19,7 @@ process VISUALIZE_PLASMID {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    circos_plot_plasmid.py -i $gbk -m $tsv -o ${name}.png
+    circos_plot_plasmid.py -i $gbk -m $tsv -s $prefix -o ${name}.png
     """
 
     stub:

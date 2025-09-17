@@ -70,19 +70,17 @@ def extract_region(input_gbk: Path, contig_id: str, start: int, end: int, sample
 
             if feature.type == "CDS" and "AMR" in feature.qualifiers.get("tag", [""]):
                 amr_list.append(feature.qualifiers.get("gene", [""])[0])
-
             elif feature.type == "CDS" and "VF" in feature.qualifiers.get("tag", [""]):
                 vf_list.append(feature.qualifiers.get("gene", [""])[0])
-
             elif feature.type == "CDS" and "DF" in feature.qualifiers.get("tag", [""]):
                 df_list.append(feature.qualifiers.get("gene", [""])[0])
 
-            elif feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
-                cds_names_list.append(feature.qualifiers.get("gene", ["protein"])[0])
+            if feature.type == "CDS" and "inti" not in feature.qualifiers.get('tag', [""])[0].lower():
+                cds_names_list.append(feature.qualifiers.get("gene", ["hypothetical protein"])[0])
 
-        cassettes = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in cds_names_list])
+        amr_name = '_'.join([re.sub(r'[^a-zA-Z0-9]', '', i) for i in amr_list])
 
-        outname = f"int_{cassettes}_{sample}_{count}"
+        outname = f"int_{amr_name}_{sample}_{count}"
         new_record = SeqRecord(
             seq=record.seq[new_start:new_end],
             id=outname,
@@ -109,7 +107,6 @@ if __name__ == "__main__":
     sample = args.integron_file.stem
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "integron_summary.tsv"
 
     try:
         df_integrons = pd.read_table(args.integron_file, comment='#')
@@ -139,5 +136,7 @@ if __name__ == "__main__":
             integron_name = f'in0_{sample}_{count}'
             row, summary_df = merge_info(summary_df, sample, contig, integron_name, d_info, cassettes, args.max_cas, [], [], [])
 
+    sample = summary_df['Sample'].iloc[0]
+    report_out = args.out_dir / f"integron_summary_{sample}.tsv"
     summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")

@@ -22,13 +22,13 @@ def reformat_tab(tab_path):
     df['%IDENTITY'] = pd.NA
     df['DATABASE'] = 'DefenseFinder'
     df['RESISTANCE'] = pd.NA
+    df["GENE"] = df["gene_name"].str.split("__").str[-1]
     df['PRODUCT'] = df[['activity', 'type', 'subtype']].agg('_'.join, axis=1)
     df.rename(columns={
                'replicon': 'SEQUENCE',
                'start': 'START',
                'end': 'END',
                'frame': 'STRAND',
-               'gene_name': 'GENE',
                'hit_seq_cov': '%COVERAGE',
                'hit_gene_ref': 'ACCESSION'
             }, inplace=True)
@@ -37,7 +37,7 @@ def reformat_tab(tab_path):
 def merge_tables(df_amr, df_vr, df_df):
     df_annotation = pd.concat([df_amr, df_vr, df_df])
     df_annotation.sort_values(by=['SEQUENCE', 'START'], inplace=True)
-    df_annotation['tag'] = ['AMR' if db == 'card' else
+    df_annotation['tag'] = ['AMR' if db == 'ncbi' else
                             ('VF' if db == 'vfdb' else 'DF')
                             for db in df_annotation['DATABASE']]
     return df_annotation
@@ -101,11 +101,7 @@ def annotate_record(record, df, nts_diff):
 def main(amr, vf, df, gbk, output, nts_diff):
     df_amr = load_tab(amr)
     df_vf = load_tab(vf)
-    print(df_vf)
-    print(df_vf.columns)
     df_df = reformat_tab(df)
-    print(df_df)
-    print(df_df.columns)
     df_annotation = merge_tables(df_amr, df_vf, df_df)
     records = list(SeqIO.parse(gbk, 'genbank'))
     annotated = []

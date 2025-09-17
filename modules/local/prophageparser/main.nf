@@ -11,7 +11,7 @@ process PROPHAGEPARSER {
     tuple val(meta), path(genomic_gbk), path(provirus), path(taxonomy)
 
     output:
-    tuple val(meta), path("prophage_summary.tsv"), emit: summary, optional: true
+    tuple val(meta), path("prophage_summary*.tsv"), emit: summary, optional: true
     tuple val(meta), path("phage_*.fasta"), emit: fasta, optional: true
     tuple val(meta), path("phage_*.tsv"), emit: tsv, optional: true
     tuple val(meta), path("phage_*.gbk"), emit: gbk, optional: true

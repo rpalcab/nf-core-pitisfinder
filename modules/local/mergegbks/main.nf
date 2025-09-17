@@ -20,7 +20,7 @@ process MERGEGBKS {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def gbk_str = gbk_list.join(',')
-    def gbk_opt = "-u ${gbk_str}"
+    def gbk_opt = gbk_str ? "-u ${gbk_str}" : ""
     """
     merge_gbks.py -g ${summary_gbk} $gbk_opt -o ${prefix}_markers.gbk
     """

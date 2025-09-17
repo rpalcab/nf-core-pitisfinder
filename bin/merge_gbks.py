@@ -8,7 +8,7 @@ import os
 def parse_args():
     parser = argparse.ArgumentParser(description="Merge MGE annotations from GBK files.")
     parser.add_argument("-g", "--genbank_base", required=True, help="Genbank base file with original annotations")
-    parser.add_argument("-u", "--updated_gbks", required=True, help="Files with new annotations (list with comma-separated files, no blankspaces allowed)")
+    parser.add_argument("-u", "--updated_gbks", required=False, help="Files with new annotations (list with comma-separated files, no blankspaces allowed)")
     parser.add_argument("-o", "--output", default="merged_output.gbk", help="Outfile name")
     return parser.parse_args()
 
@@ -46,10 +46,16 @@ def merge_annotations_multi_record(base_gbk, updated_gbk_list, output_file):
 
 if __name__ == "__main__":
     args = parse_args()
-    updated_files = args.updated_gbks.split(",")
+    if args.updated_gbks:
+        updated_files = args.updated_gbks.split(",")
 
-    for path in [args.genbank_base] + updated_files:
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f"File not found: {path}")
+        for path in [args.genbank_base] + updated_files:
+            if not os.path.isfile(path):
+                raise FileNotFoundError(f"File not found: {path}")
 
-    merge_annotations_multi_record(args.genbank_base, updated_files, args.output)
+        merge_annotations_multi_record(args.genbank_base, updated_files, args.output)
+
+    else:
+        print("[INFO] No updated GBK files provided, copying base file to output.")
+        os.system(f"cp {args.genbank_base} {args.output}")
+        print(f"[INFO] Base annotation saved in: {args.output}")

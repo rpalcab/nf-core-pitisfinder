@@ -25,10 +25,18 @@ def reformat_table(df_biom):
         "relaxase": "MOB",
         "replicon": "Replicon"
     }
+    d_type = {
+        "mate-pair-formation": "CDS",
+        "oriT": "oriT",
+        "relaxase": "CDS",
+        "replicon": "CDS"
+    }
     df_biom['tag'] = df_biom['biomarker'].map(d_tag)
     df_biom['product'] = df_biom['qseqid']
-    df_biom['gene'] = df_biom['qseqid'].str.split('|').str[0]
+    # df_biom['gene'] = df_biom['qseqid'].str.split('|').str[1]
+    df_biom['gene'] = df_biom.apply(lambda x: x['qseqid'].split('|')[1] if x['tag'] != 'oriT' else 'oriT', axis=1)
     df_biom['source'] = 'MOBsuite'
+    df_biom['type'] = df_biom['biomarker'].map(d_type)
     return df_biom
 
 def load_reformat_copla(copla):
@@ -54,11 +62,16 @@ def load_reformat_copla(copla):
         'tag': df_copla['tag'],
         'product': df_copla['Gene'],
         'gene': df_copla['Gene'],
-        'source': 'COPLA'
+        'source': 'COPLA',
+        'type': 'CDS'
     })
     return adapted_df
 
 def drop_overlapping_mobsuite(df_annotation, nts_diff=15):
+    """
+    Drops ovelapping hits (+- 15 nts difference).
+    Prioritizes COPLA results over MOBsuite.
+    """
     keep_rows = []
     mob_mask = df_annotation['source'] == 'MOBsuite'
     copla_mask = df_annotation['source'] == 'COPLA'
@@ -77,11 +90,14 @@ def drop_overlapping_mobsuite(df_annotation, nts_diff=15):
         if not overlap:
             keep_rows.append(i)
 
-    # Keep all COPLA + non-overlapping MOBsuite
-    return pd.concat([
+    # Keep all COPLA + non-overlapping MOBsuite. Drop overlapping COPLA hits
+    df_concat = pd.concat([
         df_annotation[copla_mask],
         df_annotation.loc[keep_rows]
     ], ignore_index=True)
+    df_concat.drop_duplicates(subset=['sseqid', 'sstart', 'send'], inplace=True)
+
+    return df_concat
 
 def annotate_record(record, df, nts_diff):
     # select only tab hits for this contig (by SEQUENCE)
@@ -108,8 +124,10 @@ def annotate_record(record, df, nts_diff):
         for i, row in df_rec.iterrows():
             if not (fend < row['sstart'] or fstart > row['send']):
                 overlap = True
-                df_rec.loc[i, 'product'] = feat.qualifiers.get('product', [row['product']])[0]
-                df_rec.loc[i, 'gene'] = feat.qualifiers.get('gene', [row['gene']])[0]
+                # df_rec.loc[i, 'product'] = feat.qualifiers.get('product', [row['product']])[0]
+                # df_rec.loc[i, 'gene'] = feat.qualifiers.get('gene', [row['gene']])[0]
+                # feat.qualifiers['product'] = [row['product']]
+                # feat.qualifiers['gene'] = [row['gene']]
                 break
         if not overlap:
             new_features.append(feat)
@@ -136,7 +154,7 @@ def annotate_record(record, df, nts_diff):
             'gene': [row['gene']],
             'mge_element': ['yes']
         }
-        new_feat = SeqFeature(location=loc, type='CDS', qualifiers=qualifiers)
+        new_feat = SeqFeature(location=loc, type=row['type'], qualifiers=qualifiers)
         record.features.append(new_feat)
 
     # reorder features: keep 'source' first, then CDS (and other) sorted by start

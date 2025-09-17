@@ -31,12 +31,6 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-m', '--mge_elements',
-        action="store_true",
-        help="Plot MGE elements (integrase, MPF, MOB...)"
-    )
-
-    parser.add_argument(
         "-r", "--mobsuite_report",
         default=None,
         help="MOBsuite report with plasmid and chromosome information"
@@ -82,7 +76,7 @@ def group_contigs_by_replicon(mobsuite_path):
     return replicon_map
 
 # %%
-def handle_fragmented_assembly(gbk_parser, output_prefix):
+def handle_fragmented_assembly(gbk_parser, output_prefix, sample):
     contig_sizes = gbk_parser.get_seqid2size()
     filtered_contigs = {k: v for k, v in contig_sizes.items() if v >= 1000}
 
@@ -91,18 +85,18 @@ def handle_fragmented_assembly(gbk_parser, output_prefix):
         ax.text(0.5, 0.5, "Assembly too fragmented. Not plotted.",
                 fontsize=16, ha='center', va='center')
         ax.axis('off')
-        fig.savefig(f"{output_prefix}_too_fragmented.png", dpi=300)
+        fig.savefig(f"too_fragmented_{output_prefix}.png", dpi=300)
         return
 
     for contig in filtered_contigs:
-        contig_output = f"{output_prefix}.contig_{contig}.png"
-        plot_single_contig(gbk_parser, contig, contig_output)
+        contig_output = f"{contig}_{output_prefix}.png"
+        plot_single_contig(gbk_parser, contig, contig_output, sample)
 
-def plot_single_contig(gbk_parser, contig_id, output_path):
+def plot_single_contig(gbk_parser, contig_id, output_path, sample):
     single_parser = Genbank(gbk_parser.file_path, seq_ids=[contig_id])
-    plot_circos(single_parser, output_path, mge_elements=False)
+    plot_circos(single_parser, output_path, sample)
 
-def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=False):
+def plot_circos(seqid2size, seqid2features, title, output_path, sample):
     genome_size = sum(seqid2size.values())
     figsize, dpi = get_plot_params(genome_size)
     space = 0 if len(seqid2size) == 1 else 2
@@ -136,10 +130,6 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
         outer_track.axis(fc="lightgrey")
         marker_track = None
 
-        if mge_elements:
-            marker_track = sector.add_track((71, 74), r_pad_ratio=0.1)
-            marker_track.axis(fc="#eaeaea", ec="lightgrey", lw=0.3)
-
         tracks = {'outer_track': outer_track}
 
         for i, (track_var, radius_range, label) in enumerate(track_info):
@@ -160,13 +150,15 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
                                    label_orientation="vertical", line_kws=dict(ec="grey"))
 
         for feature in features:
-            start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) // 2
-            gene_name = feature.qualifiers.get("gene", [None])[0]
-
             # Annotate if AMR/VF/DF
-            if gene_name and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
-                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws={"weight": "bold"})
+            gene_name = feature.qualifiers.get("gene", [None])[0]
+            feat_tag = feature.qualifiers.get('tag', [""])[0]
+            d_format = {'AMR': 'bold',
+                        'VF': 'normal',
+                        'DF': 'normal'}
+            if gene_name and feat_tag in d_format.keys():
+                label_pos = (int(feature.location.start) + int(feature.location.end)) // 2
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws={"weight": d_format[feat_tag]})
 
         for feature in features:
             # CDS & RNA
@@ -175,13 +167,15 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
                 tracks["cds_track"].genomic_features(feature, plotstyle="arrow", fc=color)
                 key = "Forward CDS" if feature.location.strand == 1 else "Reverse CDS"
                 feature_presence[key] = True
-            elif feature.type == "tRNA":
-                tracks["rna_track"].genomic_features(feature, color="#10470B", lw=0.1)
-                feature_presence["tRNA"] = True
+            # elif feature.type == "tRNA":
+            #     tracks["rna_track"].genomic_features(feature, color="#10470B", lw=0.1)
+            #     feature_presence["tRNA"] = True
 
             # MGE annotations
             if feature.type == "MGE":
                 type_list = feature.qualifiers.get('type', [])
+                short_name = [feature.qualifiers["name"][0].replace(f"_{sample}", "")]
+                feature.qualifiers["name"] = short_name
                 if 'plasmid' in type_list:
                     tracks["pl_track"].genomic_features(feature, color="#911EB4", lw=0.1)
                     feature_presence["Plasmid"] = True
@@ -201,32 +195,45 @@ def plot_circos(seqid2size, seqid2features, title, output_path, mge_elements=Fal
                     tracks["rvd_track"].genomic_features(feature, color=color, lw=0.1)
                     feature_presence[tag] = True
 
-            # MGE markers
-            if mge_elements and feature.type == "CDS" and 'yes' in feature.qualifiers.get('mge_element', []):
-                tag = feature.qualifiers['tag'][0]
-                marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
-                feature_presence[tag] = True
-                gene_name = feature.qualifiers.get("gene", [None])[0]
-                if gene_name:
-                    label_pos = (int(feature.location.start) + int(feature.location.end)) // 2
-                    tracks["cds_track"].annotate(label_pos, gene_name, label_size=7)
-
     fig = circos.plotfig(figsize=figsize)
     # Build legend
+    handles = []
     legend_map = {
         "Forward CDS": "#0082C8", "Reverse CDS": "#E6194B", "tRNA": "#10470B",
         "Plasmid": "#911EB4", "Integron": "#FF7F0E", "Prophage": "#17BECF", "IS": "#E27FE4",
-        "AMR": "#2CA02C", "VF": "#FFD700", "DF": "#7F7F7F",
+        "AMR": "#2CA02C", "Virulence Factor": "#FFD700", "Defense Factor": "#7F7F7F",
         "MPF": "#9467BD", "oriT": "#FFBB78", "MOB": "#0F3B5A", "Replicon": "#912A2A"
     }
-    handles = [Patch(color=color, label=key) for key, color in legend_map.items() if feature_presence[key]]
+
+    legend_map = {
+        "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
+        "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
+        "Plasmid": Patch(color="#911EB4", label="Plasmid"),
+        "Integron": Patch(color="#FF7F0E", label="Integron"),
+        "Prophage": Patch(color="#17BECF", label="Prophage"),
+        "IS": Patch(color="#E27FE4", label="IS"),
+        "AMR": Patch(color="#2CA02C", label="AMR"),
+        "VF": Patch(color="#FFD700", label="Virulence Factor"),
+        "DF": Patch(color="#7F7F7F", label="Defense Factor"),
+        "MPF": Patch(color="#9467BD", label="MPF"),
+        "oriT": Patch(color="#FFBB78", label="oriT"),
+        "MOB": Patch(color="#0F3B5A", label="MOB"),
+        "Replicon": Patch(color="#912A2A", label="Replicon")
+    }
+
+    for key, entry in legend_map.items():
+        if feature_presence[key]:
+            handles.append(entry)
+
     circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
+
     fig.savefig(output_path, dpi=dpi)
 
 # %%
 def main():
     args = get_args()
     gbk = Genbank(args.input)
+    sample = "_".join(Path(args.input).stem.split("_")[:-1])
 
     if args.mobsuite_report:
         # Parse the report and keep only contigs classified as 'chromosome'
@@ -242,13 +249,13 @@ def main():
         if not subset_features:
             print("Warning: No valid chromosome contigs found in GBK matching the report.")
 
-        output_file = args.output.with_name(f"{args.output.stem}_chromosome.png")
+        output_file = args.output.with_name(f"chromosome_{args.output.stem}.png")
         plot_circos(
             seqid2size=subset_sizes,
             seqid2features=subset_features,
             title=f"{Path(args.input).stem} (chromosome)",
             output_path=output_file,
-            mge_elements=args.mge_elements
+            sample=sample,
         )
 
     else:
@@ -262,17 +269,17 @@ def main():
             ax.text(0.5, 0.5, "Assembly too fragmented. Not plotted.",
                     fontsize=16, ha='center', va='center')
             ax.axis('off')
-            fig.savefig(args.output.with_name(f"{args.output.stem}.png"), dpi=300)
+            fig.savefig(args.output.with_name(f"too_fragmented_{args.output.stem}.png"), dpi=300)
             return
 
         for contig in filtered:
-            output_file = args.output.with_name(f"{args.output.stem}_{contig}.png")
+            output_file = args.output.with_name(f"{contig}_{args.output.stem}.png")
             plot_circos(
                 seqid2size={contig: all_sizes[contig]},
                 seqid2features={contig: all_features[contig]},
                 title=f"{Path(args.input).stem} ({contig})",
                 output_path=output_file,
-                mge_elements=False
+                sample=sample
             )
 
 # %%

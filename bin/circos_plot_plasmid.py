@@ -30,6 +30,12 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '-s', '--sample', required=True,
+        type=str,
+        help='Required. Sample name.'
+    )
+
+    parser.add_argument(
         '-m', '--mge', required=True,
         type=Path,
         help='Required. MGE coordinates table'
@@ -142,16 +148,18 @@ def main():
         # Plot 'gene' qualifier label if exists
         labels, label_pos_list = [], []
         for feature in features:
-            start, end = int(feature.location.start), int(feature.location.end)
-            label_pos = (start + end) // 2
             gene_name = feature.qualifiers.get("gene", [None])[0]
-            if gene_name is not None and any(tag in feature.qualifiers.get('tag', []) for tag in ['AMR', 'VF', 'DF']):
-                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws = {"weight":"bold"})
+            feat_tag = feature.qualifiers.get('tag', [""])[0]
+            d_format = {'AMR': 'bold',
+                        'VF': 'normal',
+                        'DF': 'normal'}
+            if gene_name and feat_tag in d_format.keys():
+                label_pos = (int(feature.location.start) + int(feature.location.end)) // 2
+                tracks["cds_track"].annotate(label_pos, gene_name, label_size=7, text_kws={"weight": d_format[feat_tag]})
                 labels.append(gene_name)
                 label_pos_list.append(label_pos)
 
         # Plot CDS (fwd, rev) rRNA, tRNA and MGEs
-
         for feature in features:
             mge_subset = df_mge[
                 (df_mge["MGE"] != "plasmid") &
@@ -161,7 +169,7 @@ def main():
             for _, row in mge_subset.iterrows():
                 start = int(row["Start"])
                 end = int(row["End"])
-                label = str(row["Name"])
+                label = str(row["Name"].replace(f"_{args.sample}", ""))
                 mge_type = row["MGE"].lower()
 
                 # Create a mock SeqFeature
@@ -212,7 +220,7 @@ def main():
                 tracks["rvd_track"].genomic_features(feature, color="#7F7F7F", lw=0.1)
                 feature_presence["DF"] = True
 
-            if feature.type == "CDS" and 'yes' in feature.qualifiers.get('mge_element', []):
+            if feature.type in ["CDS", "oriT"] and 'yes' in feature.qualifiers.get('mge_element', []):
                 tag = feature.qualifiers['tag'][0]
                 marker_track.genomic_features(feature, color=mge_colors[tag], lw=0.1)
                 feature_presence[tag] = True
@@ -224,7 +232,6 @@ def main():
     fig = circos.plotfig(figsize=figsize)
     # Add legend
     handles = []
-
     legend_map = {
         "Forward CDS": Patch(color="#0082C8", label="Forward CDS"),
         "Reverse CDS": Patch(color="#E6194B", label="Reverse CDS"),
@@ -232,8 +239,8 @@ def main():
         "Prophage": Patch(color="#17BECF", label="Prophage"),
         "IS": Patch(color="#E27FE4", label="IS"),
         "AMR": Patch(color="#2CA02C", label="AMR"),
-        "VF": Patch(color="#FFD700", label="VF"),
-        "DF": Patch(color="#7F7F7F", label="DF"),
+        "VF": Patch(color="#FFD700", label="Virulence Factor"),
+        "DF": Patch(color="#7F7F7F", label="Defense Factor"),
         "MPF": Patch(color="#9467BD", label="MPF"),
         "oriT": Patch(color="#FFBB78", label="oriT"),
         "MOB": Patch(color="#0F3B5A", label="MOB"),
@@ -242,10 +249,7 @@ def main():
 
     for key, entry in legend_map.items():
         if feature_presence[key]:
-            if isinstance(entry, list):
-                handles.extend(entry)
-            else:
-                handles.append(entry)
+            handles.append(entry)
 
     circos.ax.legend(handles=handles, bbox_to_anchor=(0.5, 0.5), loc="center", fontsize=12)
 

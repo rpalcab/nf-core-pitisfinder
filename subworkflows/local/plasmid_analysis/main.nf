@@ -139,6 +139,7 @@ workflow PLASMID_ANALYSIS {
     summary         = PLASMID_SUMMARY.out.summary       // channel: [ val(meta), summary ]
     genomic_gbk     = PLASMIDMARKERS.out.gbk            // channel: [ val(meta), gbk ]
     plasmid_gbk     = PLASMID_PARSER.out.gbk            // channel: [ val(meta), plasmid_name, gbk ]
+    plasmid_report  = PLASMID_PARSER.out.report         // channel: [ val(meta), plasmid_name, tsv ]
     versions        = ch_versions                       // channel: [ versions.yml ]
 }
 

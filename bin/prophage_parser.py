@@ -71,9 +71,9 @@ def extract_region(row: pd.Series, input_gbk: Path, out_dir: Path) -> Tuple[List
             SeqIO.write(new_record, fasta_out, "fasta")
 
         row = row.copy()
-        row['AMR'] = ';'.join(amr_list)
-        row['VF'] = ';'.join(vf_list)
-        row['DF'] = ';'.join(df_list)
+        row['AMR'] = ','.join(amr_list)
+        row['VF'] = ','.join(vf_list)
+        row['DF'] = ','.join(df_list)
         return row, outname
 
     raise ValueError(f"Contig ID '{contig_id}' not found in {input_gbk}")
@@ -86,7 +86,7 @@ def reformat_tables(df_provirus, df_taxonomy):
                     }, inplace=True)
 
     df_info['Sample'] = sample
-    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + "_" + df_info.index.astype(str) + f"_{sample}"
+    df_info['Name'] = "phage_" + df_info['Taxid'].astype(str) + f"_{sample}_" + df_info.index.astype(str)
     df_info['LastLineage'] = (
             df_info['Lineage']
             .str.split(';')
@@ -100,7 +100,6 @@ if __name__ == "__main__":
     sample = '_'.join(args.ann_file.stem.split('_')[:-2])
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    report_out = args.out_dir / "prophage_summary.tsv"
 
     try:
         df_provirus = pd.read_table(args.provirus, header=0)
@@ -124,5 +123,7 @@ if __name__ == "__main__":
             logging.warning(f"{row['Sample']}:{row['Contig']} - Extraction failed: {e}")
 
     summary_df = pd.DataFrame(summary_records, columns=columns)
+    sample = summary_df['Sample'].iloc[0]
+    report_out = args.out_dir / f"prophage_summary_{sample}.tsv"
     summary_df.to_csv(report_out, sep='\t', index=False)
     logging.info(f"Report saved to: {report_out}")
