@@ -43,7 +43,7 @@
                 },
                 "genomad_db": {
                     "type": "string",
-                    "format": "file-path",
+                    "format": "directory-path",
                     "description": "Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
                     "fa_icon": "fas fa-folder-open"
                 },
