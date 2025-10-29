@@ -19,7 +19,7 @@
 
 ## Introduction
 
-**nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences, Integrative Conjugative Elements), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
+**nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-pitisfinder_logo_dark.png">
@@ -31,7 +31,6 @@ Implemented tools:
 - Prophages ([`geNomad`](https://github.com/apcamargo/genomad))
 - Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
 - Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
-- Integrative Conjugative Elements ([`ICEFinder2`](https://bioinfo-mml.sjtu.edu.cn/index_bioinfo.php))
 - Functional annotation ([`ABRicate`](https://github.com/tseemann/abricate) and [`DefenseFinder`](https://github.com/mdmparis/defense-finder))
 
 ## Usage
@@ -84,7 +83,6 @@ Skipping Options:
   --skip_integrons          [boolean] Skip integron search. [default: false] 
   --skip_is                 [boolean] Skip IS search. [default: false] 
   --skip_prophages          [boolean] Skip prophage search. [default: false] 
-  --skip_ices               [boolean] Skip ICEs search. [default: false]
 ```
 
 > [!WARNING]
