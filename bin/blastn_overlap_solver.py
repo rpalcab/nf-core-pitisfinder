@@ -38,7 +38,7 @@ def process_table(df: pd.DataFrame) -> pd.DataFrame:
         ]
     df.columns = header
     # Contigs as numbers
-    df['contig'] = df['contig'].str.replace(r'^[a-zA-Z]+_', '', regex=True).astype(int)
+    # df['contig'] = df['contig'].str.replace(r'^[a-zA-Z]+_', '', regex=True).astype(int)
     # Redefines sequence coordinates in negative frames
     coords = np.sort(df[['sstart0', 'send0']], axis=1)
     df['sstart'], df['send'] = coords[:, 0], coords[:, 1]
@@ -47,34 +47,34 @@ def process_table(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
-    # Drops hits with identical coords, keeps higher score hit
-    df.sort_values(
-        by=["contig", "send", "score"],
-        ascending=[True, True, False],
-        inplace=True
+    grouped_filtered = []
+
+    for query, subdf in df.groupby("IS", sort=False):
+        subdf = subdf.sort_values(
+            by=["send", "score"],
+            ascending=[True, False]
         )
-    df.drop_duplicates(
-        subset=["contig", "send"],
-        keep='first',
-        inplace=True
+        subdf = subdf.drop_duplicates(
+            subset=["send"],
+            keep="first"
         )
-    df.sort_values(
-        by=["contig", "sstart", "score"],
-        ascending=[True, True, False],
-        inplace=True
+        subdf = subdf.sort_values(
+            by=["sstart", "score"],
+            ascending=[True, False]
         )
-    df.drop_duplicates(
-        subset=["contig", "sstart"],
-        keep='first',
-        inplace=True
+        subdf = subdf.drop_duplicates(
+            subset=["sstart"],
+            keep="first"
         )
-    return df.reset_index(drop=True)
+        grouped_filtered.append(subdf)
+
+    return pd.concat(grouped_filtered).reset_index(drop=True)
 
 def resolve_overlaps(df: pd.DataFrame) -> pd.DataFrame:
     filtered = []
     for _, row in df.iterrows():
-        # Checks hits are in the same contig and the current hit starts before the previous one ends
-        while filtered and row.contig == filtered[-1].contig and row.sstart < filtered[-1].send:
+        # Checks hits are in the same IS and the current hit starts before the previous one ends
+        while filtered and row.IS == filtered[-1].IS and row.sstart < filtered[-1].send:
             if row.score > filtered[-1].score:
                 filtered.pop()
             else:
