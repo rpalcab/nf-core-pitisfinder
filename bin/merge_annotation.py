@@ -11,13 +11,14 @@ import numpy as np
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
-def load_tab(tab_path):
+def load_tab(tab_path, tag):
     df = pd.read_csv(tab_path, sep="\t", header=0)
     df['START'] = df['START'].astype(int)
     df['END'] = df['END'].astype(int)
-    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE']]
+    df['tag'] = tag
+    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE', 'tag']]
 
-def reformat_tab(tab_path):
+def reformat_tab(tab_path, tag):
     df = pd.read_csv(tab_path, sep="\t", header=0)
     df['%IDENTITY'] = pd.NA
     df['DATABASE'] = 'DefenseFinder'
@@ -32,14 +33,12 @@ def reformat_tab(tab_path):
                'hit_seq_cov': '%COVERAGE',
                'hit_gene_ref': 'ACCESSION'
             }, inplace=True)
-    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE']]
+    df['tag'] = tag
+    return df[['SEQUENCE', 'START', 'END', 'STRAND', 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE', 'ACCESSION', 'PRODUCT', 'RESISTANCE', 'tag']]
 
 def merge_tables(df_amr, df_vr, df_df):
     df_annotation = pd.concat([df_amr, df_vr, df_df])
     df_annotation.sort_values(by=['SEQUENCE', 'START'], inplace=True)
-    df_annotation['tag'] = ['AMR' if db == 'ncbi' else
-                            ('VF' if db == 'vfdb' else 'DF')
-                            for db in df_annotation['DATABASE']]
     return df_annotation
 
 def annotate_record(record, df, nts_diff):
@@ -99,9 +98,9 @@ def annotate_record(record, df, nts_diff):
     return record
 
 def main(amr, vf, df, gbk, output, nts_diff):
-    df_amr = load_tab(amr)
-    df_vf = load_tab(vf)
-    df_df = reformat_tab(df)
+    df_amr = load_tab(amr, 'AMR')
+    df_vf = load_tab(vf, 'VF')
+    df_df = reformat_tab(df, 'DF')
     df_annotation = merge_tables(df_amr, df_vf, df_df)
     records = list(SeqIO.parse(gbk, 'genbank'))
     annotated = []

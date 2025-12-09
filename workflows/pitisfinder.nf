@@ -53,7 +53,8 @@ workflow PITISFINDER {
     // RES, VIR, DEF ANNOTATION
     RVD_ANNOTATION (
             ch_fasta,
-            params.df_db ? params.df_db : null
+            params.df_db ? params.df_db : null,
+            params.df_amr ? params.df_amr : null
         )
 
     // MERGE GBK AND AMR ANNOTATIONS

@@ -1,0 +1,43 @@
+Changes in component 'nf-core/abricate/run'
+'modules/nf-core/abricate/run/meta.yml' is unchanged
+'modules/nf-core/abricate/run/environment.yml' is unchanged
+Changes in 'abricate/run/main.nf':
+--- modules/nf-core/abricate/run/main.nf
++++ modules/nf-core/abricate/run/main.nf
+@@ -10,6 +10,7 @@
+     input:
+     tuple val(meta), path(assembly)
+     path databasedir
++    val(db)
+ 
+     output:
+     tuple val(meta), path("*.txt"), emit: report
+@@ -22,19 +23,22 @@
+     def args = task.ext.args ?: ''
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     def datadir = databasedir ? "--datadir ${databasedir}" : ''
++    def outname = db ? "${prefix}_${db}.txt" : "${prefix}.txt"
++    def abr_db = db ? "--db ${db}" : ''
+     """
+     ## Symlink when necessary to rename the file to allow specifying the prefix variable inside report
+     ## As the variable is what is used as the sample ID in the report file
+     if [[ "${assembly}" != "${prefix}.fasta" ]]; then
+         ln -s ${assembly} ${prefix}.fasta
+     fi
+-
++    
+     abricate \\
+         ${prefix}.fasta \\
+         ${args} \\
+         ${datadir} \\
++        ${abr_db} \\
+         --threads ${task.cpus} \\
+-        > ${prefix}.txt
++        > ${outname}
+ 
+     cat <<-END_VERSIONS > versions.yml
+     "${task.process}":
+
+'modules/nf-core/abricate/run/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/abricate/run/tests/main.nf.test' is unchanged
+************************************************************

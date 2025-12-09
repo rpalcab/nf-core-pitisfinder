@@ -29,6 +29,19 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "amr_annotator:": {
+                    "type": "string",
+                    "default": "amrfinder",
+                    "fa_icon": "fas fa-puzzle-piece",
+                    "description": "The AMR annotator to use.",
+                    "enum": ["amrfinder", "abricate"]
+                },
+                "df_amr": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to AMRFINDERPLUS database. See https://github.com/ncbi/amr/wiki/AMRFinderPlus-database for mandatory directory structure and content.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "df_db": {
                     "type": "string",
                     "format": "directory-path",
@@ -43,7 +56,7 @@
                 },
                 "genomad_db": {
                     "type": "string",
-                    "format": "file-path",
+                    "format": "directory-path",
                     "description": "Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz",
                     "fa_icon": "fas fa-folder-open"
                 },

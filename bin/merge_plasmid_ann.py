@@ -115,7 +115,7 @@ def annotate_record(record, df, nts_diff):
         fstart = int(feat.location.start) + 1 + nts_diff
         fend = int(feat.location.end) - nts_diff
         for i, row in df_rec[df_rec['source'] == 'COPLA'].iterrows():
-            if row['sstrand'] not in ['plus', 'minus']:
+            if not row['sstrand'] or row['sstrand'] not in ['plus', 'minus']:
                 if not (fend < row['sstart'] or fstart > row['send']):
                     inferred_strand = feat.location.strand
                     df_rec.at[i, 'sstrand'] = 'plus' if inferred_strand == 1 else 'minus'

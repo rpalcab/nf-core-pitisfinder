@@ -24,7 +24,7 @@ process ABRICATE_RUN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def datadir = databasedir ? "--datadir ${databasedir}" : ''
     def outname = db ? "${prefix}_${db}.txt" : "${prefix}.txt"
-    def db = db ? "--db ${db}" : ''
+    def abr_db = db ? "--db ${db}" : ''
     """
     ## Symlink when necessary to rename the file to allow specifying the prefix variable inside report
     ## As the variable is what is used as the sample ID in the report file
@@ -36,7 +36,7 @@ process ABRICATE_RUN {
         ${prefix}.fasta \\
         ${args} \\
         ${datadir} \\
-        ${db} \\
+        ${abr_db} \\
         --threads ${task.cpus} \\
         > ${outname}
 
