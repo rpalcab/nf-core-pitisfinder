@@ -31,7 +31,9 @@ Implemented tools:
 - Prophages ([`geNomad`](https://github.com/apcamargo/genomad))
 - Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
 - Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
-- Functional annotation ([`ABRicate`](https://github.com/tseemann/abricate) and [`DefenseFinder`](https://github.com/mdmparis/defense-finder))
+- Resistome annotation ([`ABRicate`](https://github.com/tseemann/abricate) or [`AMRFinderPlus`](https://github.com/ncbi/amr))
+- Virulome annotation ([`ABRicate`](https://github.com/tseemann/abricate))
+- Defense systems annotation ([`DefenseFinder`](https://github.com/mdmparis/defense-finder))
 
 ## Usage
 
@@ -66,15 +68,23 @@ nextflow run rpalcab/nf-core-pitisfinder -r dev \
    --outdir <OUTDIR>
 ```
 
+The databases used can be run from local, automatically download if not provided or available at [`Zenodo`](https://zenodo.org/records/17879645).
+
 > [!WARNING]
 > Please be aware that `conda` profile is not available, as not all tools can be installed through Conda.
 
 In addition to default nf-core parameters, **pitisfinder also accepts these inputs/options**:
 ```
+Available tools:
+  --amr_annotator           [string] The AMR annotator to use.  (accepted: amrfinder, abricate) [default: amrfinder]
+```
+
+```
 Local databases (if not provided, they are automatically downloaded):
   --df_db                   [string] Path to DefenseFinder database. See https://github.com/mdmparis/defense-finder/ for mandatory directory structure and content. 
   --copla_db                [string] Path to Copla databases. See https://github.com/santirdnd/COPLA for mandatory directory structure and content. 
   --genomad_db              [string] Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz
+  --amr_db                  [string] Path to AMRFinderPlus database. See https://github.com/ncbi/amr/wiki/AMRFinderPlus-database for mandatory directory structure and content. 
 ```
 
 ```
