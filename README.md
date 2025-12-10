@@ -19,7 +19,7 @@
 
 ## Introduction
 
-**nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences, Integrative Conjugative Elements), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
+**nf-core/pitisfinder** is a bioinformatics pipeline designed for the detection, characterization and classification of Mobile Genetic Elements (MGEs) from bacterial whole-genome assemblies. It takes a samplesheet, FASTA and Genbank files as input, predicts the major MGEs (plasmids, prophages, integrons, Insertion Sequences), characterizing their most relevant components and classifying them according to different specific MGE criteria. The provided genome is also assessed for relevant functional features like resistance genes, virulence factors and defense systems.
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-pitisfinder_logo_dark.png">
@@ -31,8 +31,9 @@ Implemented tools:
 - Prophages ([`geNomad`](https://github.com/apcamargo/genomad))
 - Integrons ([`IntegronFinder`](https://integronfinder.readthedocs.io/en/latest/))
 - Insertion Sequences ([`ISEScan`](https://github.com/xiezhq/ISEScan))
-- Integrative Conjugative Elements ([`ICEFinder2`](https://bioinfo-mml.sjtu.edu.cn/index_bioinfo.php))
-- Functional annotation ([`ABRicate`](https://github.com/tseemann/abricate) and [`DefenseFinder`](https://github.com/mdmparis/defense-finder))
+- Resistome annotation ([`ABRicate`](https://github.com/tseemann/abricate) or [`AMRFinderPlus`](https://github.com/ncbi/amr))
+- Virulome annotation ([`ABRicate`](https://github.com/tseemann/abricate))
+- Defense systems annotation ([`DefenseFinder`](https://github.com/mdmparis/defense-finder))
 
 ## Usage
 
@@ -72,10 +73,16 @@ nextflow run rpalcab/nf-core-pitisfinder -r dev \
 
 In addition to default nf-core parameters, **pitisfinder also accepts these inputs/options**:
 ```
+Available tools:
+  --amr_annotator           [string] The AMR annotator to use.  (accepted: amrfinder, abricate) [default: amrfinder]
+```
+
+```
 Local databases (if not provided, they are automatically downloaded):
   --df_db                   [string] Path to DefenseFinder database. See https://github.com/mdmparis/defense-finder/ for mandatory directory structure and content. 
   --copla_db                [string] Path to Copla databases. See https://github.com/santirdnd/COPLA for mandatory directory structure and content. 
   --genomad_db              [string] Path to geNomad database. Available at https://ftp.ncbi.nlm.nih.gov/pub/kristensen/pVOGs/downloads/All/AllvogHMMprofiles.tar.gz
+  --amr_db                  [string] Path to AMRFinderPlus database. See https://github.com/ncbi/amr/wiki/AMRFinderPlus-database for mandatory directory structure and content. 
 ```
 
 ```
@@ -84,7 +91,6 @@ Skipping Options:
   --skip_integrons          [boolean] Skip integron search. [default: false] 
   --skip_is                 [boolean] Skip IS search. [default: false] 
   --skip_prophages          [boolean] Skip prophage search. [default: false] 
-  --skip_ices               [boolean] Skip ICEs search. [default: false]
 ```
 
 > [!WARNING]

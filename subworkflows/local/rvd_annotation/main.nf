@@ -11,7 +11,7 @@ workflow RVD_ANNOTATION {
     take:
     ch_fasta     // channel: [ val(meta), [ fasta ] ]
     df_db        // path (optional): df_db
-    df_amr       // path (optional): df_amr
+    amr_db       // path (optional): amr_db
 
     main:
 
@@ -20,12 +20,12 @@ workflow RVD_ANNOTATION {
     // AMR
     ch_amr = Channel.empty()
     if ( params.amr_annotator == 'amrfinder' ) {
-        if ( params.df_amr ) {
+        if ( params.amr_db ) {
             ch_amrfinder_db = Channel
-                .fromPath(params.df_amr, checkIfExists: true)
+                .fromPath(params.amr_db, checkIfExists: true)
                 .first()
         }
-        else if ( !params.df_amr ) {
+        else if ( !params.amr_db ) {
             AMRFINDERPLUS_UPDATE()
             ch_versions = ch_versions.mix(AMRFINDERPLUS_UPDATE.out.versions)
             ch_amrfinder_db = AMRFINDERPLUS_UPDATE.out.db

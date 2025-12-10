@@ -29,14 +29,14 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "amr_annotator:": {
+                "amr_annotator": {
                     "type": "string",
                     "default": "amrfinder",
                     "fa_icon": "fas fa-puzzle-piece",
                     "description": "The AMR annotator to use.",
                     "enum": ["amrfinder", "abricate"]
                 },
-                "df_amr": {
+                "amr_db": {
                     "type": "string",
                     "format": "directory-path",
                     "description": "Path to AMRFINDERPLUS database. See https://github.com/ncbi/amr/wiki/AMRFinderPlus-database for mandatory directory structure and content.",
@@ -110,7 +110,7 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-forward",
                     "description": "Skip ICEs search.",
-                    "default": false
+                    "default": true
                 }
             }
         },
