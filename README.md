@@ -68,6 +68,8 @@ nextflow run rpalcab/nf-core-pitisfinder -r dev \
    --outdir <OUTDIR>
 ```
 
+The databases used can be run from local, automatically download if not provided or available at [`Zenodo`](https://zenodo.org/records/17879645).
+
 > [!WARNING]
 > Please be aware that `conda` profile is not available, as not all tools can be installed through Conda.
 
