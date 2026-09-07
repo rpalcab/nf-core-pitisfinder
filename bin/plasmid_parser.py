@@ -126,7 +126,8 @@ def main():
 
     mobt_filt = extract_plasmid_row(df_mobt, pl_id)
     mobr_filt = extract_plasmid_row(df_mobr, pl_id)
-    contigs = mobr_filt['contig_id'].tolist()
+    contigs0 = mobr_filt['contig_id'].tolist()
+    contigs = list(map(str, contigs0))
 
     qrow = df_qry.iloc[0]
     prow = df_ptu.iloc[0]

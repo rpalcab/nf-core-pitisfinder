@@ -99,7 +99,13 @@ def plot_single_contig(gbk_parser, contig_id, output_path, sample):
 def plot_circos(seqid2size, seqid2features, title, output_path, sample):
     genome_size = sum(seqid2size.values())
     figsize, dpi = get_plot_params(genome_size)
-    space = 0 if len(seqid2size) == 1 else 2
+    n_sectors = len(seqid2size)
+
+    if n_sectors == 1:
+        space = 0
+    else:
+        # Keep total gap comfortably below 360
+        space = min(2, max(0.05, 30 / n_sectors))
     circos = Circos(sectors=seqid2size, space=space)
     circos.text(f"{title}", size=12, r=125)
 

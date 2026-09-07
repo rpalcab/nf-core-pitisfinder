@@ -8,7 +8,7 @@ process VISUALIZE_CIRCULAR {
         'docker.io/rpalcab/visualizer:1.0' }"
 
     input:
-    tuple val(meta), val(name), path(gbk), val(mobsuite_report)
+    tuple val(meta), val(name), path(gbk), path(mobsuite_report)
 
     output:
     tuple val(meta), val(name), path("*.png"), emit: png

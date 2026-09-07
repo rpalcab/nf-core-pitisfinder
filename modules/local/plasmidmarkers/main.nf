@@ -2,6 +2,10 @@ process PLASMIDMARKERS {
     tag "$meta.id"
     label 'process_single'
 
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker://rpalcab/pitis_parser:1.0':
+        'docker.io/rpalcab/pitis_parser:1.0' }"
+
     input:
     tuple val(meta), path(biomarkers_mobsuite), path(biomarkers_copla), path(gbk)
 
